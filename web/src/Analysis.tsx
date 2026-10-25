@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, LEVELS, type AnalysisData, type Curriculum, type Standard } from './api';
+import { analysisMarkdown, downloadMarkdown } from './analysisMarkdown';
 import { areaNo } from './catalog';
 import ElementsTable from './ElementsTable';
 import LevelingCard from './Leveling';
@@ -304,6 +305,16 @@ export default function Analysis({ subject, items, curriculum }: Props) {
 
           {/* ⑧ 평가요소 수준화 */}
           <LevelingCard std={std} elements={data.elements} cues={data.levels} />
+
+          <div className="md-save">
+            <button
+              type="button"
+              className="msi-btn"
+              onClick={() => downloadMarkdown(`교육과정분석_${std.code}.md`, analysisMarkdown(std, areaInfo, data))}
+            >
+              이 성취기준 분석 md 파일로 저장
+            </button>
+          </div>
         </>
       )}
     </div>

@@ -37,8 +37,8 @@ export default function LevelingCard({ std, elements, cues }: Props) {
           const lv = { ...emptyLeveling(), ...el.leveling };
           return (
             <div key={i} className="lvz-block">
-              <h3 className="info-title">평가요소 {i + 1}</h3>
-              {/* 6행 × 2열: 왼쪽 항목 이름, 오른쪽 내용 */}
+              <h3 className="msi-unit el-tag">평가요소 {i + 1}</h3>
+              {/* 5행 × 2열: 왼쪽 항목 이름, 오른쪽 내용 */}
               <table className="an-table lvz-info">
                 <tbody>
                   <tr>
@@ -56,10 +56,6 @@ export default function LevelingCard({ std, elements, cues }: Props) {
                   <tr>
                     <th scope="row">평가 내용</th>
                     <td>{el.content}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">평가 방법</th>
-                    <td>{el.method || '—'}</td>
                   </tr>
                   <tr>
                     <th scope="row">

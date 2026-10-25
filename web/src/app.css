@@ -158,7 +158,13 @@
 
 /* ── 수준화 탭 (평가요소마다: 도출 내용 확인 · 재확인 · A~E 수준화) ── */
 .lvz-block { display: flex; flex-direction: column; gap: 12px; }
-.lvz-block .info-title { margin: 0; }
+/* 「평가요소 N」 알약 — ⑦ 표 위 · ⑧ 블록 맨 위 */
+.el-block { display: flex; flex-direction: column; gap: 8px; }
+.el-tag { align-self: flex-start; margin: 0; font-size: 16px; }
+.el-table tbody tr:first-child > * { border-top: 0; }
+
+/* 교육과정 분석 맨 아래 「md 파일로 저장」 */
+.md-save { display: flex; justify-content: flex-end; }
 .lvz-block + .lvz-block { margin-top: 10px; padding-top: 20px; border-top: 2px dashed var(--msi-ink); }
 .lvz-info tbody th { width: 200px; vertical-align: middle; }
 .lvz-info td { font-size: 15px; }

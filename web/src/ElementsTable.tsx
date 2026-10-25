@@ -14,31 +14,27 @@ const COLS = [
 export default function ElementsTable({ rows }: { rows: ElementRow[] }) {
   return (
     <>
-      {/* 평가요소마다 표 하나: 맨 위 「평가요소 N」, 아래로 항목 이름 | 내용 */}
+      {/* 평가요소마다 표 하나: 표 위에 「평가요소 N」 알약, 표는 항목 이름 | 내용 */}
       {rows.map((r, i) => (
-        <table key={i} className="an-table el-table">
-          <colgroup>
-            <col className="el-label-col" />
-            <col />
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="colgroup" colSpan={2}>
-                평가요소 {i + 1}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {COLS.map(([key, label]) => (
-              <tr key={key}>
-                <th scope="row">{label}</th>
-                <td>
-                  <Text value={r[key]} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div key={i} className="el-block">
+          <h3 className="msi-unit el-tag">평가요소 {i + 1}</h3>
+          <table className="an-table el-table">
+            <colgroup>
+              <col className="el-label-col" />
+              <col />
+            </colgroup>
+            <tbody>
+              {COLS.map(([key, label]) => (
+                <tr key={key}>
+                  <th scope="row">{label}</th>
+                  <td>
+                    <Text value={r[key]} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ))}
     </>
   );
