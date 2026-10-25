@@ -2,6 +2,7 @@
 # 데이터는 git 에 있는 seed(data/seed, data/seed-analysis)만 쓴다 — 로컬 DB·학교 문서는 올라가지 않는다.
 # 처음 한 번만: 저장소 Settings → Pages → Build and deployment → Source 를 "GitHub Actions" 로 바꾸기.
 # 주소: https://sage810.github.io/Achievement-based-evaluation-procedure/
+# 아래 paths 의 파일이 바뀐 push 에서만 돈다 — 빈 커밋으로는 다시 배포되지 않으니 Actions 탭의 「Run workflow」를 쓴다.
 name: 배포 (GitHub Pages)
 
 on:
