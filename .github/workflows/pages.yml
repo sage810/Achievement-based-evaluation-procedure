@@ -1,0 +1,49 @@
+# main 에 push 하면 읽기 전용 배포판(교육과정 분석)을 빌드해서 GitHub Pages 에 자동으로 올린다.
+# 데이터는 git 에 있는 seed(data/seed, data/seed-analysis)만 쓴다 — 로컬 DB·학교 문서는 올라가지 않는다.
+# 처음 한 번만: 저장소 Settings → Pages → Build and deployment → Source 를 "GitHub Actions" 로 바꾸기.
+# 주소: https://sage810.github.io/Achievement-based-evaluation-procedure/
+name: 배포 (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', 'server/**', 'data/**', 'tools/export_static.py', 'vite.config.ts', 'package*.json', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      # server/main.py 를 불러와 seed 로 임시 DB를 만든다
+      - run: pip install fastapi pydantic
+      - run: npm run build
+        env:
+          VITE_STATIC: '1'
+      - run: python tools/export_static.py dist/snapshot.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

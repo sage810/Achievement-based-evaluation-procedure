@@ -1,7 +1,12 @@
 // 좌측 사이드바 — 평가 절차 4단계 메뉴. 왼쪽에 떠 있는 도크이고, 오른쪽 가장자리 손잡이로 열고 닫는다.
 // (score/teacher.html 의 도크 구조를 스티커 디자인으로 옮김)
 
+import { READ_ONLY } from './api';
+
 export type Tab = 'analysis' | 'review' | 'items';
+
+// 서버에 저장해야 쓰는 탭 — 읽기 전용 배포판에서는 막는다
+const LOCAL_ONLY: Tab[] = ['review', 'items'];
 
 const icon = (name: string) => new URL(`./design-sticker/assets/icons/${name}.png`, import.meta.url).href;
 
@@ -40,7 +45,7 @@ export default function Sidebar({ tab, onSelect, open, onToggle }: Props) {
             {i > 0 && <div className="sb-divider" aria-hidden="true" />}
             <p className="sb-stage">{stage.title}</p>
             {stage.items.map((it) =>
-              it.tab ? (
+              it.tab && !(READ_ONLY && LOCAL_ONLY.includes(it.tab)) ? (
                 <button
                   key={it.label}
                   type="button"
@@ -55,7 +60,7 @@ export default function Sidebar({ tab, onSelect, open, onToggle }: Props) {
                 <button key={it.label} type="button" className="sb-item" disabled>
                   <span className="sb-icon" style={{ backgroundImage: `url(${icon(it.icon)})` }} aria-hidden="true" />
                   <span className="sb-label">{it.label}</span>
-                  <span className="sb-soon">준비 중</span>
+                  <span className="sb-soon">{it.tab ? '로컬 전용' : '준비 중'}</span>
                 </button>
               ),
             )}

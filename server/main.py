@@ -3,6 +3,7 @@
 처음 실행해 표가 비어 있으면 data/seed/*.json 을 넣는다.
 """
 import json
+import os
 import sqlite3
 from contextlib import closing
 from datetime import datetime
@@ -13,7 +14,7 @@ from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "data" / "assessment.db"
+DB_PATH = Path(os.environ.get("ASSESSMENT_DB") or ROOT / "data" / "assessment.db")  # 배포판 내보내기는 임시 DB를 쓴다
 SEED_DIR = ROOT / "data" / "seed"
 ANALYSIS_SEED_DIR = ROOT / "data" / "seed-analysis"  # 성취기준 분석 초안 (school_level·subject·code 로 성취기준과 이음)
 CURRICULUM_PATH = ROOT / "data" / "curriculum.json"  # 교육과정 원문(과목·영역 정보) — 읽기 전용

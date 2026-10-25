@@ -3,7 +3,7 @@ import Analysis from './Analysis';
 import ItemDev from './ItemDev';
 import PlanReview from './PlanReview';
 import Sidebar, { type Tab } from './Sidebar';
-import { api, type Curriculum, type Standard } from './api';
+import { api, READ_ONLY, type Curriculum, type Standard } from './api';
 import { SCHOOL_LEVELS, SUBJECTS } from './catalog';
 
 // 사이드바 열림 상태는 이 브라우저에만 기억한다(없으면 넓은 화면은 열고 좁은 화면은 닫음)
@@ -154,6 +154,11 @@ export default function App() {
                   </label>
                   <p className="msi-small filters-count">성취기준 {items.length}개</p>
                 </div>
+              )}
+              {READ_ONLY && (
+                <p className="msi-small">
+                  읽기 전용 배포판이에요. 평가계획서 검토·문항 개발은 내 컴퓨터에서 앱을 실행해야 쓸 수 있어요.
+                </p>
               )}
               {error && <p className="status error">{error}</p>}
             </div>

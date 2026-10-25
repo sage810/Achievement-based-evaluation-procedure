@@ -178,7 +178,37 @@ export interface ItemSet {
   updated_at: string;
 }
 
+// GitHub Pages 배포판 — 서버 없이 빌드 때 만든 snapshot.json(seed 자료)만 읽는다. 저장·업로드는 안 된다.
+export const READ_ONLY = import.meta.env.VITE_STATIC === '1';
+
+interface Snapshot {
+  standards: Standard[];
+  analyses: Record<string, Analysis>;
+  curriculum: Curriculum[];
+  review_template: ReviewSheet[];
+}
+
+let snapshot: Promise<Snapshot> | null = null;
+
+async function fromSnapshot(url: string, method: string): Promise<unknown> {
+  if (method !== 'GET') throw new Error('읽기 전용 배포판에서는 저장할 수 없어요');
+  snapshot ??= fetch(`${import.meta.env.BASE_URL}snapshot.json`).then((r) => r.json());
+  const s = await snapshot;
+  const u = new URL(url, location.href);
+  const q = Object.fromEntries(u.searchParams);
+  const same = (x: { school_level: string; subject: string }) =>
+    x.school_level === q.school_level && x.subject === q.subject;
+  const path = u.pathname.replace(/^.*\/api\//, '');
+  if (path === 'standards') return s.standards.filter(same);
+  if (path === 'curriculum') return s.curriculum.find(same) ?? null;
+  if (path.startsWith('analyses/')) return s.analyses[path.split('/')[1]] ?? null;
+  if (path === 'review-template') return s.review_template;
+  if (path === 'plan-reviews' || path === 'item-sets') return [];
+  throw new Error('읽기 전용 배포판에서는 쓸 수 없는 기능이에요');
+}
+
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
+  if (READ_ONLY) return fromSnapshot(url, init?.method ?? 'GET') as Promise<T>;
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...init });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
