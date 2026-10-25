@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/app.css"
+        ],
+        "createdAt": "2026-10-23T10:13:31.105Z",
+        "reason": "Claude triage: L92 .ks-row > * + * border-left is a table column divider (same 2px ink as all cell borders), not a card accent stripe"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/App.css"
+        ],
+        "createdAt": "2026-10-23T10:22:33.050Z",
+        "reason": "Claude triage: .ks-row > * + * border-left is a table column divider (same 2px ink as all cell borders), not a card accent stripe; same file as web/src/app.css (case-insensitive FS)"
+      }
+    ]
+  }
+}

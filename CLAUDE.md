@@ -29,6 +29,24 @@ Andrej Karpathy의 LLM 코딩 관찰에서 파생된 단일 `CLAUDE.md` 파일�
 결정해야 할 사안이 있으면 혼자 정해서 진행하지 말고 **반드시 사용자에게 먼저 물어본다**.
 선택지(2~4개)와 추천안·이유를 짧게 함께 보여 주고, 답을 받은 뒤에 진행한다.
 
+## 피드백 모드
+
+세션 시작 때 `.claude/feedback.md` 에 `[ ]` 항목이 있으면 먼저 처리한다 (`/feedback_mode` 처리 모드).
+개발 서버(`npm run dev`) 화면 우하단 「피드백」 버튼으로 쌓인 수정 요청이다. 도구: `tools/feedback-mode/`.
+
+## 평가계획서 검토
+
+사용자가 「평가계획서 검토」라고 하면 앱 「평가계획서」 탭에 올라온 검토 대기 계획서를 `docs/평가계획서-검토-절차.md` 순서대로
+검토해 결과를 앱에 넣는다 (`py -3.12 tools/plan_review.py pending | text | save`).
+
+## 문항 초안
+
+사용자가 「문항 초안」이라고 하면 앱 「문항 개발」 탭에서 초안 요청된 과제를 `docs/문항-초안-절차.md` 순서대로 채워 넣는다
+(`py -3.12 tools/item_draft.py pending | show | save`).
+
+성취기준을 주며 「수행평가 문항·채점기준표·예시답안을 만들어 달라」고 하면 `/assessment-item` 스킬을 따른다
+(주제 후보를 먼저 묻는다. 사용법: `docs/스킬-문항개발-사용법.md`).
+
 ## 작업 완료 알림
 
 작업이 끝나면 항상 iPhone Claude 앱으로 알림을 보낸다. 턴 마지막에 `PushNotification`(status: proactive)을
