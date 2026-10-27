@@ -99,8 +99,8 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum }: Pro
   if (!curriculum) {
     return (
       <div className="msi-note">
-        <b>{subject}</b> 과목은 아직 교육과정 분석을 할 수 없어 문항 개발도 할 수 없어요. 지금은 중학교·고등학교
-        「정보」만 돼요.
+        <b>{subject}</b> 과목은 아직 교육과정 분석을 할 수 없어 문항 개발도 할 수 없어요. Claude Code에 이 과목의
+        교육과정을 넣어 달라고 말해 주세요.
       </div>
     );
   }

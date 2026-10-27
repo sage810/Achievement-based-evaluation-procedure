@@ -68,7 +68,7 @@ export default function Analysis({ subject, items, curriculum }: Props) {
     return (
       <div className="msi-note">
         <b>{subject}</b> 과목은 교육과정 내용 체계(핵심 아이디어·지식·이해·과정·기능·가치·태도)가 아직 없어 분석할 수 없어요.
-        지금은 중학교·고등학교 「정보」만 분석할 수 있어요.
+        Claude Code에 이 과목의 교육과정을 넣어 달라고 말해 주세요.
       </div>
     );
   }
