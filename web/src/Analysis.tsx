@@ -4,7 +4,7 @@ import { analysisMarkdown, downloadMarkdown } from './analysisMarkdown';
 import { areaNo } from './catalog';
 import ElementsTable from './ElementsTable';
 import LevelingCard from './Leveling';
-import { Marked, parseBasis, wordsAt, type ElWord, type Where } from './basisMarks';
+import { forms, Marked, parseBasis, wordsAt, type ElWord, type Spot, type Where } from './basisMarks';
 import { Bullets, Text } from './ReadOnly';
 
 // 교육과정 분석 탭 — 연수 양식(①~⑧) 순서대로 한 성취기준의 분석을 보여 준다.
@@ -92,7 +92,34 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
   const [error, setError] = useState('');
   const [connHint, setConnHint] = useState(false); // 「성취기준과의 연결」 ? 질문
   // 평가요소마다 도출 근거가 가리키는 곳 — 위 ②③⑤⑥ 본문에 평가요소 색 밑줄
-  const basis = useMemo(() => data?.elements.map((e) => parseBasis(e.basis)) ?? [], [data]);
+  // 근거가 가리킨 칸·수준 줄에 그 말이 없으면 같은 구역 전체에서 찾는다
+  // (예: 「④ 지식·이해(컴퓨팅 시스템의 구성요소)」는 ③ 과정·기능 줄에만 그 말이 있음)
+  const basis = useMemo(() => {
+    const raw = data?.elements.map((e) => parseBasis(e.basis)) ?? [];
+    if (!data || !std || !areaInfo) return raw;
+    const textOf = (s: Pick<Spot, 'sec' | 'part' | 'levels'>): string => {
+      if (s.sec === '②') return [...areaInfo.core_ideas, ...Object.values(data.core_idea_connection)].join('\n');
+      if (s.sec === '③') {
+        const keys = s.part && s.part in std ? [s.part as (typeof CATS)[number][0]] : CATS.map(([k]) => k);
+        return keys.flatMap((k) => [...areaInfo[k], ...std[k]]).join('\n');
+      }
+      if (s.sec === '⑤') {
+        const ex = [std.explanation, ...data.explanation_implications];
+        const co = [...areaInfo.considerations, ...data.consideration_implications];
+        return (s.part === 'explanation' ? ex : s.part === 'consideration' ? co : [...ex, ...co]).join('\n');
+      }
+      return (s.levels ?? LEVELS).map((l) => std.levels[l]).join('\n');
+    };
+    const found = (s: Pick<Spot, 'sec' | 'part' | 'levels'>, w: string) => forms(w).some((f) => textOf(s).includes(f));
+    return raw.map((spots) =>
+      spots.flatMap((s) => {
+        const missing = s.words.filter((w) => !found(s, w));
+        if (!missing.length || (!s.part && !s.levels)) return [s];
+        const kept = s.words.filter((w) => found(s, w));
+        return [...(kept.length ? [{ ...s, words: kept }] : []), { sec: s.sec, words: missing }];
+      }),
+    );
+  }, [data, std, areaInfo]);
   const at = (w: Where) => wordsAt(basis, w);
 
   // 과목이 바뀌면 첫 영역으로
@@ -385,7 +412,7 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
               <span className="r">무엇을 + 어떻게 → ~하기</span>
             </div>
             <div className="msi-card-body">
-              <ElementsTable rows={data.elements} />
+              <ElementsTable rows={data.elements} basis={basis} />
             </div>
           </section>
 

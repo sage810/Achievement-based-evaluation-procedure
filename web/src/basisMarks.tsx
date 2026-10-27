@@ -62,9 +62,7 @@ export function parseBasis(basis: string): Spot[] {
       const words = inside
         .flatMap((t) => t.split(/[,，→·]/))
         .map((w) => w.trim())
-        .filter((w) => w.length > 1 && w !== '빠짐')
-        // 「구성요소를 파악하기」 ↔ 본문 「구성요소를 파악하고」 — 「~하기」는 「~하」로도 찾는다
-        .flatMap((w) => (w.endsWith('하기') ? [w, w.slice(0, -1)] : [w]));
+        .filter((w) => w.length > 1 && w !== '빠짐');
       if (!words.length) continue;
       spots.push({
         sec,
@@ -97,37 +95,54 @@ export const wordsAt = (perElement: Spot[][], w: Where): ElWord[] =>
 
 export const EL_COLORS = 5;
 
+// 「구성요소를 파악하기」 ↔ 본문 「구성요소를 파악하고」 — 「~하기」는 「~하」로도 찾는다
+export const forms = (w: string) => (w.endsWith('하기') ? [w, w.slice(0, -1)] : [w]);
+
 // 글에 노란 형광펜(hl)과 평가요소 색 밑줄(els)을 함께 긋는다. 밑줄이 겹치면 아래로 한 칸씩 내려 둘 다 보이게.
+// 밑줄마다 data-el(평가요소 번호)·data-words(근거 낱말)를 달아 ⑦ 도출 근거 링크가 찾아올 수 있게 한다.
 export function Marked({ text, hl = [], els = [] }: { text: string; hl?: string[]; els?: ElWord[] }) {
   const n = text.length;
   const yellow = new Array<boolean>(n).fill(false);
-  const sets: number[][] = Array.from({ length: n }, () => []);
+  const marks: Map<number, Set<string>>[] = Array.from({ length: n }, () => new Map());
   const paint = (w: string, f: (k: number) => void) => {
     for (let p = text.indexOf(w); w && p >= 0; p = text.indexOf(w, p + w.length)) {
       for (let k = p; k < p + w.length; k++) f(k);
     }
   };
   hl.forEach((w) => paint(w, (k) => (yellow[k] = true)));
-  els.forEach(({ word, i }) => paint(word, (k) => sets[k].includes(i) || sets[k].push(i)));
+  els.forEach(({ word, i }) =>
+    forms(word).forEach((f) => paint(f, (k) => marks[k].set(i, (marks[k].get(i) ?? new Set()).add(word)))),
+  );
 
-  const runs: { s: string; y: boolean; e: number[] }[] = [];
+  const key = (k: number) =>
+    [...marks[k].entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([i, ws]) => `${i}:${[...ws].sort().join('|')}`)
+      .join(';');
+  const runs: { s: string; y: boolean; key: string; k: number }[] = [];
   for (let k = 0; k < n; k++) {
-    const e = [...sets[k]].sort();
     const last = runs[runs.length - 1];
-    if (last && last.y === yellow[k] && last.e.join() === e.join()) last.s += text[k];
-    else runs.push({ s: text[k], y: yellow[k], e });
+    if (last && last.y === yellow[k] && last.key === key(k)) last.s += text[k];
+    else runs.push({ s: text[k], y: yellow[k], key: key(k), k });
   }
   return (
     <>
       {runs.map((r, j) => {
         let node: ReactNode = r.s;
-        r.e.forEach((i, d) => {
-          node = (
-            <span className={`ul ul-${i % EL_COLORS}`} style={{ textUnderlineOffset: `${3 + d * 5}px` }}>
-              {node}
-            </span>
-          );
-        });
+        [...marks[r.k].entries()]
+          .sort(([a], [b]) => a - b)
+          .forEach(([i, ws], d) => {
+            node = (
+              <span
+                className={`ul ul-${i % EL_COLORS}`}
+                data-el={i}
+                data-words={[...ws].join('|')}
+                style={{ textUnderlineOffset: `${3 + d * 5}px` }}
+              >
+                {node}
+              </span>
+            );
+          });
         return r.y ? (
           <mark key={j} className="hl">
             {node}
@@ -137,5 +152,40 @@ export function Marked({ text, hl = [], els = [] }: { text: string; hl?: string[
         );
       })}
     </>
+  );
+}
+
+// 위 본문에서 평가요소 i 의 근거 낱말 word 에 그은 밑줄들
+export const basisTargets = (i: number, word: string) =>
+  [...document.querySelectorAll<HTMLElement>(`.analysis .ul[data-el="${i}"]`)].filter((el) =>
+    el.dataset.words!.split('|').includes(word),
+  );
+
+// ⑦ 도출 근거 글 — 위 본문에 밑줄이 있는 근거 낱말은 누르면 그 밑줄로 이동하는 링크
+export function BasisText({ text, i, words, has }: { text: string; i: number; words: string[]; has: (word: string) => boolean }) {
+  const linked = [...new Set(words)].filter(has).sort((a, b) => b.length - a.length);
+  if (!linked.length) return <div className="ro-text">{text}</div>;
+  const re = new RegExp(`(${linked.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`);
+  const go = (word: string) => {
+    const targets = basisTargets(i, word);
+    targets[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targets.forEach((el) => {
+      el.classList.remove('is-target');
+      void el.offsetWidth; // 다시 누르면 깜빡임을 처음부터
+      el.classList.add('is-target');
+    });
+  };
+  return (
+    <div className="ro-text">
+      {text.split(re).map((part, j) =>
+        j % 2 ? (
+          <button key={j} type="button" className={`basis-link ul ul-${i % EL_COLORS}`} onClick={() => go(part)}>
+            {part}
+          </button>
+        ) : (
+          part
+        ),
+      )}
+    </div>
   );
 }

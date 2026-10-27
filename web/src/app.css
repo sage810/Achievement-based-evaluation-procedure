@@ -137,6 +137,13 @@
 .ul-3 { text-decoration-color: var(--el-3); } .el-c3 { background: var(--el-3-bg); box-shadow: inset 0 -4px 0 var(--el-3); }
 .ul-4 { text-decoration-color: var(--el-4); } .el-c4 { background: var(--el-4-bg); box-shadow: inset 0 -4px 0 var(--el-4); }
 .el-legend { margin: 0; }
+/* ⑦ 도출 근거 링크 — 누르면 위 본문의 그 밑줄로 이동해 잠깐 반짝임 */
+.basis-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-underline-offset: 3px; cursor: pointer; }
+.basis-link:hover { background: var(--hd-pick); border-radius: 4px; }
+.basis-link:focus-visible { outline: 2px solid var(--msi-ink); outline-offset: 2px; border-radius: 4px; }
+.ul.is-target { animation: basis-flash 2.4s ease-out; border-radius: 4px; }
+@keyframes basis-flash { 0%, 60% { background: var(--msi-yellow-cap); box-shadow: 0 0 0 3px var(--msi-yellow-cap); } 100% { background: transparent; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .ul.is-target { animation: none; background: var(--msi-yellow-cap); } }
 /* 형광펜 밑줄 — ③ 내용 요소 중 이 성취기준 것 · ⑥ 진술문의 수준 구분 단서 */
 .hl { background: linear-gradient(transparent 58%, var(--msi-yellow-cap) 58%); color: inherit; padding: 0 1px; }
 .empty { color: var(--msi-muted-2); list-style: none; }
