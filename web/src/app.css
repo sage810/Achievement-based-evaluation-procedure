@@ -1,17 +1,19 @@
 /* 성취평가 도우미 — 스티커 디자인(design-sticker) 위에 이 앱의 배치만 더한다 */
 
-/* 본문 글꼴: Maplestory → 넥슨 Lv1 고딕 (선생님 피드백 2026-10-23). design-sticker 는 그대로 두고 여기서 덮어쓴다 */
-/* 굵기와 상관없이 모두 Bold 글꼴 파일로 (선생님 피드백 2026-10-23) */
+/* 본문 글꼴: Maplestory → 넥슨 Lv1 고딕 → KoPubWorld 돋움체 Medium (선생님 피드백 2026-10-23, 2026-10-27). design-sticker 는 그대로 두고 여기서 덮어쓴다 */
+/* 굵기와 상관없이 모두 Medium 글꼴 파일 하나로 */
+@font-face { font-family: 'KoPubWorld Dotum'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('./fonts/KoPubWorldDotum-Medium.woff2') format('woff2'); }
+:root { --msi-font-body: 'KoPubWorld Dotum', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+/* 넥슨 Lv1 고딕 — 창 본문 안의 소제목·버튼·칩·표 머리·머리줄 글꼴 (아래 .msi-win-body). 굵기와 상관없이 Bold 파일 하나로 */
 @font-face { font-family: 'NEXON Lv1 Gothic'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('./fonts/NEXONLv1Gothic-700.woff') format('woff'); }
-:root { --msi-font-body: 'NEXON Lv1 Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
 
 /* 카드·주제 머리줄 글씨: 픽셀 글꼴 → CookieRun Bold 로 통일 (선생님 피드백 2026-10-23) */
 .msi-card-head, .msi-topic-bar { font-family: var(--msi-font-round); font-weight: 700; font-size: 15px; }
 .msi-card-head .r { font-size: 13px; opacity: 1; }
 
-/* 창 본문 안의 CookieRun 자리 → 강원교육튼튼(GangwonEdu 파일의 실제 글꼴) (선생님 피드백 2026-10-23)
-   사이드바·제목줄은 그대로. 이 글꼴은 굵기가 하나뿐이라 가짜 굵게를 끈다 */
-.msi-win-body { --msi-font-round: var(--msi-font-display); font-synthesis-weight: none; }
+/* 창 본문 안의 CookieRun 자리 → 강원교육튼튼 → 넥슨 Lv1 고딕 (선생님 피드백 2026-10-23, 2026-10-27)
+   사이드바·페이지 큰 제목(강원교육튼튼)은 그대로. 글꼴 파일이 하나뿐이라 가짜 굵게를 끈다 */
+.msi-win-body { --msi-font-round: 'NEXON Lv1 Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-synthesis-weight: none; }
 
 /* 머리줄 색 — 채도를 낮춘 파스텔, 머리줄마다 다른 색 (선생님 피드백 2026-10-23, 시안 A) */
 :root {
