@@ -77,7 +77,6 @@ export function analysisMarkdown(std: Standard, area: Area, data: AnalysisData):
           ['도출 근거 (②~⑥의 어떤 내용·해설에서)', el.basis],
           ['도출 이유 (왜 이것을 평가해야 하는가)', el.reason],
           ['평가 내용 (무엇으로 확인할 것인가)', el.content],
-          ['평가방법', el.method],
         ],
       ),
       '',

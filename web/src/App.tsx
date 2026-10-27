@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Analysis from './Analysis';
+import Graph from './Graph';
 import ItemDev from './ItemDev';
 import PlanReview from './PlanReview';
 import Sidebar, { type Tab } from './Sidebar';
@@ -18,7 +19,12 @@ function initialSidebarOpen() {
   return window.matchMedia('(min-width: 901px)').matches;
 }
 
-const TITLES: Record<Tab, string> = { analysis: '교육과정 분석', review: '평가계획서 검토', items: '문항 개발' };
+const TITLES: Record<Tab, string> = {
+  analysis: '교육과정 분석',
+  graph: '교육과정 그래프',
+  review: '평가계획서 검토',
+  items: '문항 개발',
+};
 
 function Items({ title, items }: { title: string; items: string[] }) {
   if (!items.length) return null;
@@ -37,7 +43,7 @@ function Items({ title, items }: { title: string; items: string[] }) {
 // 과목 정보 — 교육과정의 성격·목표·교수학습·평가 (읽기 전용)
 function SubjectInfo({ c }: { c: Curriculum }) {
   return (
-    <details className="msi-card info-card" style={{ ['--accent' as string]: 'var(--hd-subject)' }}>
+    <details className="msi-card info-card" style={{ ['--accent' as string]: 'var(--hd-overview)' }}>
       <summary className="msi-card-head">
         <span>
           개요 · {c.school_level} {c.subject} 교육과정
@@ -107,7 +113,16 @@ export default function App() {
   }, [schoolLevel, subject]);
 
   const changeFilter = (setter: (v: string) => void, value: string) => setter(value);
-  const switchTab = (t: Tab) => setTab(t);
+  const switchTab = (t: Tab) => {
+    setOpenStdId(null);
+    setTab(t);
+  };
+  // 그래프에서 「분석 화면에서 보기」로 넘어갈 때 열 성취기준
+  const [openStdId, setOpenStdId] = useState<number | null>(null);
+  const openInAnalysis = (id: number) => {
+    setOpenStdId(id);
+    setTab('analysis');
+  };
 
   return (
     <div className={`msi-page ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -167,8 +182,10 @@ export default function App() {
           {tab === 'analysis' ? (
             <>
               {curriculum && <SubjectInfo c={curriculum} />}
-              <Analysis subject={subject} items={items} curriculum={curriculum} />
+              <Analysis subject={subject} items={items} curriculum={curriculum} initialStdId={openStdId} />
             </>
+          ) : tab === 'graph' ? (
+            <Graph subject={subject} items={items} curriculum={curriculum} onOpen={openInAnalysis} />
           ) : tab === 'items' ? (
             <ItemDev schoolLevel={schoolLevel} subject={subject} items={items} curriculum={curriculum} />
           ) : (
