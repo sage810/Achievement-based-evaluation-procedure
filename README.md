@@ -46,6 +46,22 @@ npm run dev
 - 처음 실행하면 `data/assessment.db`(SQLite)가 만들어지고 `data/seed/` 의 성취기준과 `data/seed-analysis/` 의 분석이 들어갑니다.
   나중에 시드에 성취기준이 늘면 `py -3.12 -m server.import_seed` 로 없는 것만 더합니다(이미 있는 것은 건드리지 않음).
 
+## 읽기 전용 배포판 (GitHub Pages)
+
+<https://sage810.github.io/Achievement-based-evaluation-procedure/>
+
+설치 없이 브라우저에서 **교육과정 분석** 탭만 볼 수 있는 배포판입니다.
+
+- 서버 없이 동작합니다. 빌드할 때 git에 있는 시드(`data/seed/`, `data/seed-analysis/`)로 `snapshot.json`을 만들어 읽습니다. 로컬 DB와 학교 문서는 올라가지 않습니다.
+- 평가계획서 검토와 문항 개발은 저장이 필요해서 사이드바에 「로컬 전용」으로 막혀 있습니다. 이 두 탭은 내 컴퓨터에서 `npm run dev`로 실행해야 씁니다.
+
+### 다시 배포하는 법
+
+- `main`에 push하면 [.github/workflows/pages.yml](.github/workflows/pages.yml)이 자동으로 빌드해 배포합니다.
+  단, `web/`, `server/`, `data/`, `tools/export_static.py`, `vite.config.ts`, `package*.json`, 워크플로 파일이 바뀐 push에서만 돕니다.
+- 위 파일이 바뀌지 않았는데 다시 배포하려면 GitHub 저장소 **Actions** 탭 → 「배포 (GitHub Pages)」 → **Run workflow**를 누릅니다. 빈 커밋으로는 배포되지 않습니다.
+- 처음 한 번은 저장소 **Settings → Pages → Build and deployment → Source**를 「GitHub Actions」로 바꿔야 합니다(이미 설정됨).
+
 ## 폴더 구성
 
 ```
@@ -55,6 +71,7 @@ server/         API 서버 (FastAPI + SQLite), 문항 워드 내보내기(item_d
 tools/          Claude Code가 쓰는 명령
   plan_review.py   평가계획서 검토: pending | text | save
   item_draft.py    문항 초안: pending | show | save | new | find | check
+  export_static.py 배포판용 snapshot.json 만들기
   feedback-mode/   개발 서버 전용 화면 피드백 도구
 data/
   seed/            과목별 성취기준·성취수준
@@ -64,6 +81,7 @@ data/
   templates/       검토 결과 엑셀 양식
 docs/           절차 문서, 논술형 평가 연수 자료 정리본(docs/논술형 평가/정리/)
 .claude/        Claude Code 설정과 스킬
+.github/        GitHub Pages 자동 배포 워크플로
 ```
 
 ## 저장소에 올리지 않는 것
