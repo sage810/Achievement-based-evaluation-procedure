@@ -1,5 +1,7 @@
 # 성취평가 도우미
 
+**바로 보기:** <https://sage810.github.io/Achievement-based-evaluation-procedure/>
+
 중·고등학교 **정보 교과** 선생님이 성취평가제 절차를 따라 평가를 준비하도록 돕는 웹앱입니다.
 교육과정 분석부터 평가계획서 검토, 수행평가 문항 개발까지 연수 양식 순서대로 화면에 정리합니다.
 분석·검토·초안 작성 같은 글쓰기는 [Claude Code](https://claude.com/claude-code)가 맡고, 선생님은 화면에서 결과를 확인하고 내려받습니다.
@@ -48,9 +50,7 @@ npm run dev
 
 ## 읽기 전용 배포판 (GitHub Pages)
 
-<https://sage810.github.io/Achievement-based-evaluation-procedure/>
-
-설치 없이 브라우저에서 **교육과정 분석** 탭만 볼 수 있는 배포판입니다.
+맨 위 주소는 설치 없이 브라우저에서 **교육과정 분석** 탭만 볼 수 있는 배포판입니다.
 
 - 서버 없이 동작합니다. 빌드할 때 git에 있는 시드(`data/seed/`, `data/seed-analysis/`)로 `snapshot.json`을 만들어 읽습니다. 로컬 DB와 학교 문서는 올라가지 않습니다.
 - 평가계획서 검토와 문항 개발은 저장이 필요해서 사이드바에 「로컬 전용」으로 막혀 있습니다. 이 두 탭은 내 컴퓨터에서 `npm run dev`로 실행해야 씁니다.
