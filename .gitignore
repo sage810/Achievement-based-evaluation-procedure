@@ -5,7 +5,7 @@ node_modules/
 dist/
 __pycache__/
 data/*.db-journal
-# 올라온 평가계획서 원본 (학교 문서라 git에 올리지 않음)
+# 예전에 올린 평가계획서 원본 (학교 문서라 git에 올리지 않음)
 data/plans/
 # 문항 초안 작업용으로 꺼낸 JSON (원본은 DB)
 data/items/

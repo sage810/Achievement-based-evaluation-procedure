@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 export interface BarSection {
   id: string;
   label: string;
+  count?: number; // 칩에 붙는 작은 수 — 이 구역에 있는 고른 평가요소의 근거
 }
 
 // 구역으로 이동 — 키보드 포커스도 함께 옮겨, 그 자리에서 이어 읽을 수 있게 한다
@@ -13,6 +14,7 @@ export function jumpTo(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (el instanceof HTMLDetailsElement) el.open = true; // 접혀 있는 카드는 펼치고 간다
   el.tabIndex = -1;
   el.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
   el.focus({ preventScroll: true });
@@ -66,6 +68,15 @@ export function useScrollMemory(tab: string, id: string | number | null | undefi
   }, [key]);
 }
 
+// 이 탭에서 읽던 자리가 남아 있는지 — 새 창이면 없다
+export function hasScrollMemory(tab: string) {
+  try {
+    return (JSON.parse(sessionStorage.getItem(`scroll:${tab}`) ?? 'null')?.y ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 // 누른 버튼이 사라졌을 때(지우기 등) 포커스가 페이지 처음으로 튀지 않게, 화면 첫 카드 제목으로 옮긴다
 export function focusFirstHeading() {
   requestAnimationFrame(() => {
@@ -83,6 +94,8 @@ interface Props {
   step?: { prev?: () => void; next?: () => void }; // 있으면 ◀ ▶ (없는 쪽은 눌러도 아무 일 없음)
   after?: ReactNode; // 돌아가기 버튼 자리
   onStuck?: () => void; // 막대가 화면 위에 붙었을 때 — 위 선택 영역을 지나갔다는 뜻
+  titleAlways?: boolean; // title 을 막대가 붙기 전에도 늘 보여 준다
+  below?: ReactNode; // 막대 맨 아래 줄
 }
 
 // 끝에 닿아도 포커스를 잃지 않도록 disabled 대신 aria-disabled
@@ -95,7 +108,7 @@ function StepButton({ dir, go }: { dir: 'prev' | 'next'; go?: () => void }) {
   );
 }
 
-export default function ContextBar({ label, title, sections, step, after, onStuck }: Props) {
+export default function ContextBar({ label, title, sections, step, after, onStuck, titleAlways, below }: Props) {
   const onStuckRef = useRef(onStuck);
   onStuckRef.current = onStuck;
   const [active, setActive] = useState<string | null>(null);
@@ -165,7 +178,8 @@ export default function ContextBar({ label, title, sections, step, after, onStuc
           <b className="ctx-label" title={label} aria-live="polite">
             {label}
           </b>
-          {title && stuck && <span className="ctx-title">{title}</span>}
+          {title && titleAlways && <span className="ctx-title is-always">{title}</span>}
+          {title && !titleAlways && stuck && <span className="ctx-title">{title}</span>}
           {after}
         </div>
         {sections.length > 0 && (
@@ -176,16 +190,19 @@ export default function ContextBar({ label, title, sections, step, after, onStuc
                 type="button"
                 className="ctx-chip"
                 aria-current={active === s.id ? 'true' : undefined}
+                aria-label={s.count ? `${s.label}, 근거 ${s.count}곳` : undefined}
                 onClick={() => {
-                onStuckRef.current?.(); // 위 선택 영역을 먼저 접어, 움직이는 도중에 자리가 바뀌지 않게 한다
-                jumpTo(s.id);
-              }}
+                  onStuckRef.current?.(); // 위 선택 영역을 먼저 접어, 움직이는 도중에 자리가 바뀌지 않게 한다
+                  jumpTo(s.id);
+                }}
               >
                 {s.label}
+                {!!s.count && <span className="ctx-count">{s.count}</span>}
               </button>
             ))}
           </div>
         )}
+        {below}
       </nav>
     </>
   );

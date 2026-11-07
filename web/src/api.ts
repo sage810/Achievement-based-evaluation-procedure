@@ -115,24 +115,6 @@ export interface ReviewSheet {
   groups: { title: string; desc: string; items: ReviewCheck[] }[];
 }
 
-export type Verdict = 'ok' | 'warn' | 'bad' | 'na';
-
-export interface ReviewItemResult {
-  verdict: Verdict;
-  where: string; // 계획서에서 찾은 위치
-  finding: string; // 판단 근거
-  fix: string; // 수정 제안
-}
-
-export interface PlanReview {
-  id: number;
-  filename: string;
-  status: 'pending' | 'done';
-  result: { summary: string; items: Record<string, ReviewItemResult> } | null;
-  uploaded_at: string;
-  reviewed_at: string | null;
-}
-
 // 문항 개발 — 연수 양식 「수행평가 과제 및 채점기준표 개발」 칸 그대로
 export interface RubricRow {
   level: string; // 성취수준 (A, B-C, D-E …)
@@ -178,7 +160,7 @@ export interface ItemSet {
   updated_at: string;
 }
 
-// GitHub Pages 배포판 — 서버 없이 빌드 때 만든 snapshot.json(seed 자료)만 읽는다. 저장·업로드는 안 된다.
+// GitHub Pages 배포판 — 서버 없이 빌드 때 만든 snapshot.json(seed 자료)만 읽는다. 저장은 안 된다.
 export const READ_ONLY = import.meta.env.VITE_STATIC === '1';
 
 interface Snapshot {
@@ -211,7 +193,7 @@ async function fromSnapshot(url: string, method: string): Promise<unknown> {
   }
   if (path.startsWith('analyses/')) return s.analyses[path.split('/')[1]] ?? null;
   if (path === 'review-template') return s.review_template;
-  if (path === 'plan-reviews' || path === 'item-sets') return [];
+  if (path === 'item-sets') return [];
   throw new Error('읽기 전용 배포판에서는 쓸 수 없는 기능이에요');
 }
 
@@ -241,14 +223,6 @@ export const api = {
   saveAnalysis: (standardId: number, data: AnalysisData, ai_draft: boolean) =>
     call<Analysis>(`/api/analyses/${standardId}`, { method: 'PUT', body: JSON.stringify({ data, ai_draft }) }),
   reviewTemplate: () => call<ReviewSheet[]>('/api/review-template'),
-  planReviews: () => call<PlanReview[]>('/api/plan-reviews'),
-  uploadPlan: (file: File) =>
-    call<PlanReview>(`/api/plan-reviews?${new URLSearchParams({ filename: file.name })}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: file,
-    }),
-  deletePlan: (id: number) => call<{ ok: boolean }>(`/api/plan-reviews/${id}`, { method: 'DELETE' }),
   itemSets: (school_level: string, subject: string) =>
     call<ItemSet[]>(`/api/item-sets?${new URLSearchParams({ school_level, subject })}`),
   createItemSet: (body: Omit<ItemSet, 'id' | 'updated_at'>) =>

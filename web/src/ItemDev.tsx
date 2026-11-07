@@ -298,7 +298,7 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum, stdCo
 
   return (
     <div className="analysis">
-      <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-pick)' }}>
+      <section className="msi-card sec-pick">
         <div className="msi-card-head">
           <h2>수행평가 과제</h2>
           <span className="r">연수 양식 「수행평가 과제 및 채점기준표 개발」</span>
@@ -429,7 +429,7 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum, stdCo
           )}
 
           {/* 1️⃣ 수행평가 과제 정보표 */}
-          <section id="sec-task" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-ideas)' }}>
+          <section id="sec-task" className="msi-card sec-ideas">
             <div className="msi-card-head">
               <h2>1️⃣ 수행평가 과제 정보표</h2>
               <span className="r">
@@ -648,7 +648,7 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum, stdCo
           </section>
 
           {/* 2️⃣ 수행평가 문항 */}
-          <section id="sec-question" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-system)' }}>
+          <section id="sec-question" className="msi-card sec-system">
             <div className="msi-card-head">
               <h2>2️⃣ 수행평가 문항</h2>
               <span className="r">발문 · 자료 · 〈조건〉 · [배점]</span>
@@ -661,7 +661,7 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum, stdCo
           </section>
 
           {/* 3️⃣ 채점기준표 */}
-          <section id="sec-rubric" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-doc)' }}>
+          <section id="sec-rubric" className="msi-card sec-doc">
             <div className="msi-card-head">
               <h2>3️⃣ 채점기준표</h2>
               <span className="r">만점 {maxTotal}점</span>
@@ -722,7 +722,7 @@ export default function ItemDev({ schoolLevel, subject, items, curriculum, stdCo
           </section>
 
           {/* 4️⃣ 예시답안 */}
-          <section id="sec-answers" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-levels)' }}>
+          <section id="sec-answers" className="msi-card sec-levels">
             <div className="msi-card-head">
               <h2>4️⃣ 예시답안</h2>
             </div>

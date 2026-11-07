@@ -6,7 +6,7 @@ import { READ_ONLY } from './api';
 export type Tab = 'analysis' | 'graph' | 'review' | 'items';
 
 // 서버에 저장해야 쓰는 탭 — 읽기 전용 배포판에서는 막는다
-export const LOCAL_ONLY: Tab[] = ['review', 'items'];
+export const LOCAL_ONLY: Tab[] = ['items'];
 
 const icon = (name: string) => new URL(`./design-sticker/assets/icons/${name}.png`, import.meta.url).href;
 

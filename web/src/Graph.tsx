@@ -34,7 +34,7 @@ interface Link extends SimulationLinkDatum<Node> {
 }
 
 // 영역마다 다른 머리줄 파스텔
-const AREA_COLORS = ['var(--hd-pick)', 'var(--hd-ideas)', 'var(--hd-system)', 'var(--hd-doc)', 'var(--hd-levels)', 'var(--hd-elements)'];
+const AREA_COLORS = ['var(--area-1)', 'var(--area-2)', 'var(--area-3)', 'var(--area-4)', 'var(--area-5)', 'var(--area-6)'];
 const RADIUS: Record<Kind, number> = { area: 30, idea: 16, std: 11 };
 const W = 900;
 const H = 640;
@@ -302,7 +302,7 @@ export default function Graph({ subject, items, curriculum, onOpen }: Props) {
 
   return (
     <div className="graph-layout">
-      <section className="msi-card graph-card" style={{ ['--accent' as string]: 'var(--hd-pick)' }}>
+      <section className="msi-card graph-card sec-pick">
         <div className="msi-card-head graph-head">
           <h2>영역 · 핵심 아이디어 · 성취기준</h2>
           <div className="graph-tools">
@@ -446,7 +446,7 @@ export default function Graph({ subject, items, curriculum, onOpen }: Props) {
         </svg>
       </section>
 
-      <aside ref={panelRef} className="msi-card graph-panel" style={{ ['--accent' as string]: 'var(--hd-elements)' }}>
+      <aside ref={panelRef} className="msi-card graph-panel sec-elements">
         <div className="msi-card-head">
           <h2>{sel ? (sel.kind === 'area' ? '영역' : sel.kind === 'idea' ? '핵심 아이디어' : '성취기준') : '살펴보기'}</h2>
         </div>

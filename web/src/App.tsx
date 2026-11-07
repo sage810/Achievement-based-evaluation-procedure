@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { hasScrollMemory } from './ContextBar';
 import { flushSync } from 'react-dom';
 import Analysis from './Analysis';
 import Graph from './Graph';
@@ -64,7 +65,7 @@ function Items({ title, items }: { title: string; items: string[] }) {
 // 과목 정보 — 교육과정의 성격·목표·교수학습·평가 (읽기 전용)
 function SubjectInfo({ c }: { c: Curriculum }) {
   return (
-    <details className="msi-card info-card" style={{ ['--accent' as string]: 'var(--hd-overview)' }}>
+    <details className="msi-card info-card sec-overview">
       <summary className="msi-card-head">
         <h2>
           개요 · {c.school_level} {c.subject} 교육과정
@@ -164,8 +165,9 @@ export default function App() {
       document.getElementById('main')?.focus({ preventScroll: true }); // 누른 메뉴가 사라져도 포커스를 잃지 않게
     }
   };
-  // 선택 영역 — 이어 볼 때와 본문으로 내려간 뒤에는 한 줄로 접는다. 처음 쓰는 브라우저에서는 펼쳐 둔다
-  const [selOpen, setSelOpen] = useState(!saved.stdCode);
+  // 선택 영역 — 처음 들어오면 펼쳐 두고, 본문으로 내려가면 한 줄로 접는다.
+  // 읽던 자리로 돌아오는 새로 고침만 접은 채 시작한다 (펼친 높이만큼 자리가 어긋나지 않게)
+  const [selOpen, setSelOpen] = useState(() => !hasScrollMemory(tab));
   const selStd = items.find((s) => s.code === stdCode) ?? null;
   const collapsed = !selOpen && (tab === 'analysis' || tab === 'items') && ready && !!curriculum && !!selStd;
   // 화면 위로 지나간 영역이 줄어드는 것이라, 읽던 글이 움직이지 않게 줄어든 만큼 스크롤을 맞춘다
@@ -207,7 +209,9 @@ export default function App() {
       <main id="main" tabIndex={-1} className="msi-wrap app-wrap">
         <div className="msi-win-body">
           <section className="msi-topic">
-            <div className="msi-topic-bar">{tab === 'items' ? '2단계 문항·평가도구 개발' : '1단계 운영 계획'}</div>
+            <div className="msi-topic-bar">
+              {tab === 'items' ? '2단계 문항·평가도구 개발' : tab === 'analysis' ? '① 학교급과 과목 선택' : '1단계 운영 계획'}
+            </div>
             <div className="msi-topic-in">
               <h1 className="msi-h1">{TITLES[tab]}</h1>
               {collapsed && (
@@ -223,7 +227,7 @@ export default function App() {
                   </button>
                 </div>
               )}
-              {tab !== 'review' && !collapsed && (
+              {!collapsed && (
                 <div className="filters">
                   <label className="msi-label">
                     학교급
@@ -264,10 +268,10 @@ export default function App() {
               )}
               {READ_ONLY && (
                 <p className="msi-small">
-                  읽기 전용 배포판이에요. 평가계획서 검토·문항 개발은 내 컴퓨터에서 앱을 실행해야 쓸 수 있어요.
+                  읽기 전용 배포판이에요. 문항 개발은 내 컴퓨터에서 앱을 실행해야 쓸 수 있어요.
                 </p>
               )}
-              {error && tab !== 'review' && (
+              {error && (
                 <p className="status error" role="alert">
                   {error}
                 </p>
@@ -276,25 +280,23 @@ export default function App() {
           </section>
 
           {tab === 'review' ? (
-            <PlanReview />
+            <PlanReview schoolLevel={schoolLevel} subject={subject} standards={items} ready={ready} loadFailed={!!error} />
           ) : error ? null : !ready ? (
             <div className="msi-note" role="status">
               불러오는 중이에요…
             </div>
           ) : tab === 'analysis' ? (
-            <>
-              {curriculum && <SubjectInfo c={curriculum} />}
-              <Analysis
-                subject={subject}
-                items={items}
-                curriculum={curriculum}
-                stdCode={stdCode}
-                onStdChange={setStdCode}
-                onDevelop={READ_ONLY ? undefined : () => goTab('items')}
-                pickerOpen={!collapsed}
-                onBarStuck={collapseSel}
-              />
-            </>
+            <Analysis
+              subject={subject}
+              items={items}
+              curriculum={curriculum}
+              overview={curriculum && <SubjectInfo c={curriculum} />}
+              stdCode={stdCode}
+              onStdChange={setStdCode}
+              onDevelop={READ_ONLY ? undefined : () => goTab('items')}
+              pickerOpen={!collapsed}
+              onBarStuck={collapseSel}
+            />
           ) : tab === 'graph' ? (
             <Graph subject={subject} items={items} curriculum={curriculum} onOpen={openInAnalysis} />
           ) : (

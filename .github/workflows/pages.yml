@@ -1,4 +1,4 @@
-# main 에 push 하면 읽기 전용 배포판(교육과정 분석)을 빌드해서 GitHub Pages 에 자동으로 올린다.
+# main 에 push 하면 읽기 전용 배포판(교육과정 분석·그래프·평가계획서 검토 지침)을 빌드해서 GitHub Pages 에 자동으로 올린다.
 # 데이터는 git 에 있는 seed(data/seed, data/seed-analysis)만 쓴다 — 로컬 DB·학교 문서는 올라가지 않는다.
 # 처음 한 번만: 저장소 Settings → Pages → Build and deployment → Source 를 "GitHub Actions" 로 바꾸기.
 # 주소: https://sage810.github.io/Achievement-based-evaluation-procedure/

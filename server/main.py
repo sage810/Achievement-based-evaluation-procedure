@@ -9,8 +9,8 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,10 +19,6 @@ SEED_DIR = ROOT / "data" / "seed"
 ANALYSIS_SEED_DIR = ROOT / "data" / "seed-analysis"  # 성취기준 분석 초안 (school_level·subject·code 로 성취기준과 이음)
 CURRICULUM_PATH = ROOT / "data" / "curriculum.json"  # 교육과정 원문(과목·영역 정보) — 읽기 전용
 REVIEW_TEMPLATE_PATH = ROOT / "data" / "review-template.json"  # 평가계획서 검토 항목(검토 템플릿 xlsx 에서 뽑음)
-REVIEW_XLSX_PATH = ROOT / "data" / "templates" / "평가계획서 검토 템플릿.xlsx"  # 결과 내려받기 양식
-PLANS_DIR = ROOT / "data" / "plans"  # 올라온 평가계획서 원본
-PLAN_EXTS = (".pdf", ".hwp", ".hwpx")
-PLAN_MAX_BYTES = 30 * 1024 * 1024
 
 LEVELS = ("A", "B", "C", "D", "E")
 # 지식·이해 / 과정·기능 / 가치·태도 / 평가요소 — 줄마다 한 항목인 목록, JSON 문자열로 저장
@@ -64,16 +60,6 @@ CREATE TABLE IF NOT EXISTS item_sets (
   status       TEXT NOT NULL DEFAULT 'draft',
   ai_draft     INTEGER NOT NULL DEFAULT 0,
   updated_at   TEXT NOT NULL
-);
--- 평가계획서 검토. 올리면 pending, Claude Code 가 검토 결과(result JSON)를 넣으면 done.
-CREATE TABLE IF NOT EXISTS plan_reviews (
-  id          INTEGER PRIMARY KEY,
-  filename    TEXT NOT NULL,
-  stored      TEXT NOT NULL,
-  status      TEXT NOT NULL DEFAULT 'pending',
-  result      TEXT,
-  uploaded_at TEXT NOT NULL,
-  reviewed_at TEXT
 );
 """
 
@@ -272,165 +258,12 @@ def save_analysis(sid: int, a: Analysis) -> dict:
     return get_analysis(sid)
 
 
-# ── 평가계획서 검토 ─────────────────────────────────────────────
-# 올리기·목록·결과 보기·엑셀 내려받기는 앱이, 검토(result 채우기)는 Claude Code 가 한다(docs/평가계획서-검토-절차.md).
-
-VERDICTS = {"ok": "✔ 잘 됨", "warn": "△ 고민 필요", "bad": "✖ 문제", "na": "－ 해당 없음"}
-
-
-class ReviewItem(BaseModel):
-    verdict: str  # ok | warn | bad | na
-    where: str = ""  # 계획서에서 찾은 위치
-    finding: str = ""  # 판단 근거 (무엇이 어떻게 되어 있나)
-    fix: str = ""  # 수정 제안
-
-
-class ReviewResult(BaseModel):
-    summary: str
-    items: dict[str, ReviewItem]  # 검토 항목 ID(가1, 1 …) → 판정
-
-
-def review_row(r: sqlite3.Row) -> dict:
-    return {
-        "id": r["id"],
-        "filename": r["filename"],
-        "status": r["status"],
-        "result": json.loads(r["result"]) if r["result"] else None,
-        "uploaded_at": r["uploaded_at"],
-        "reviewed_at": r["reviewed_at"],
-    }
-
-
-def get_review_row(conn: sqlite3.Connection, rid: int) -> sqlite3.Row:
-    r = conn.execute("SELECT * FROM plan_reviews WHERE id = ?", (rid,)).fetchone()
-    if not r:
-        raise HTTPException(404, "평가계획서를 찾을 수 없습니다.")
-    return r
-
+# ── 평가계획서 검토 항목 ─────────────────────────────────────
+# 검토 지침 md 는 화면이 이 항목과 성취기준으로 만든다.
 
 @app.get("/api/review-template")
 def get_review_template() -> list[dict]:
     return json.loads(REVIEW_TEMPLATE_PATH.read_text(encoding="utf-8"))
-
-
-@app.get("/api/plan-reviews")
-def list_plan_reviews() -> list[dict]:
-    with closing(connect()) as conn:
-        return [review_row(r) for r in conn.execute("SELECT * FROM plan_reviews ORDER BY id DESC")]
-
-
-@app.post("/api/plan-reviews")
-async def upload_plan(filename: str, request: Request) -> dict:
-    """본문에 파일 바이트를 그대로 받는다(multipart 라이브러리 없이)."""
-    name = Path(filename).name.strip()
-    ext = Path(name).suffix.lower()
-    if ext not in PLAN_EXTS:
-        raise HTTPException(400, "PDF, HWP, HWPX 파일만 올릴 수 있어요.")
-    body = await request.body()
-    if not body:
-        raise HTTPException(400, "빈 파일이에요.")
-    if len(body) > PLAN_MAX_BYTES:
-        raise HTTPException(400, "파일이 너무 커요(30MB 이하).")
-    PLANS_DIR.mkdir(parents=True, exist_ok=True)
-    now = datetime.now().isoformat(timespec="seconds")
-    with closing(connect()) as conn, conn:
-        rid = conn.execute(
-            "INSERT INTO plan_reviews (filename, stored, uploaded_at) VALUES (?, '', ?)", (name, now)
-        ).lastrowid
-        stored = f"{rid}{ext}"
-        (PLANS_DIR / stored).write_bytes(body)
-        conn.execute("UPDATE plan_reviews SET stored = ? WHERE id = ?", (stored, rid))
-        return review_row(get_review_row(conn, rid))
-
-
-@app.get("/api/plan-reviews/{rid}")
-def get_plan_review(rid: int) -> dict:
-    with closing(connect()) as conn:
-        return review_row(get_review_row(conn, rid))
-
-
-@app.get("/api/plan-reviews/{rid}/file")
-def get_plan_file(rid: int) -> FileResponse:
-    with closing(connect()) as conn:
-        r = get_review_row(conn, rid)
-    return FileResponse(PLANS_DIR / r["stored"], filename=r["filename"])
-
-
-@app.put("/api/plan-reviews/{rid}/result")
-def save_plan_result(rid: int, res: ReviewResult) -> dict:
-    """Claude Code 가 검토를 마치고 결과를 넣는다."""
-    bad = [k for k, v in res.items.items() if v.verdict not in VERDICTS]
-    if bad:
-        raise HTTPException(400, f"판정 값이 잘못된 항목: {', '.join(bad)}")
-    now = datetime.now().isoformat(timespec="seconds")
-    with closing(connect()) as conn, conn:
-        get_review_row(conn, rid)
-        conn.execute(
-            "UPDATE plan_reviews SET status = 'done', result = ?, reviewed_at = ? WHERE id = ?",
-            (res.model_dump_json(), now, rid),
-        )
-        return review_row(get_review_row(conn, rid))
-
-
-@app.delete("/api/plan-reviews/{rid}")
-def delete_plan_review(rid: int) -> dict:
-    with closing(connect()) as conn, conn:
-        r = get_review_row(conn, rid)
-        conn.execute("DELETE FROM plan_reviews WHERE id = ?", (rid,))
-    (PLANS_DIR / r["stored"]).unlink(missing_ok=True)
-    return {"ok": True}
-
-
-@app.get("/api/plan-reviews/{rid}/xlsx")
-def download_plan_review(rid: int) -> Response:
-    """검토 템플릿 양식에 판정·근거·수정 제안 열을 더해 내려준다."""
-    from copy import copy
-    from io import BytesIO
-    from urllib.parse import quote
-
-    import openpyxl
-
-    with closing(connect()) as conn:
-        r = review_row(get_review_row(conn, rid))
-    if not r["result"]:
-        raise HTTPException(409, "아직 검토가 끝나지 않았어요.")
-    items = r["result"]["items"]
-
-    wb = openpyxl.load_workbook(REVIEW_XLSX_PATH)
-    # 시트마다: 결과를 쓸 첫 열(판정), 그 뒤로 근거·수정 제안
-    for ws, first_col in zip(wb.worksheets, (6, 7)):
-        head = ws.cell(row=4, column=5)
-        for i, title in enumerate(("판정", "찾은 위치 · 근거", "수정 제안")):
-            c = ws.cell(row=4, column=first_col + i, value=title)
-            c.font, c.fill, c.border, c.alignment = copy(head.font), copy(head.fill), copy(head.border), copy(head.alignment)
-        ws.column_dimensions[openpyxl.utils.get_column_letter(first_col)].width = 14
-        ws.column_dimensions[openpyxl.utils.get_column_letter(first_col + 1)].width = 60
-        ws.column_dimensions[openpyxl.utils.get_column_letter(first_col + 2)].width = 50
-        for row in range(5, ws.max_row + 1):
-            key = ws.cell(row=row, column=1).value
-            it = items.get(str(key)) if key is not None else None
-            if not it:
-                continue
-            body = ws.cell(row=row, column=4)
-            where = f"[{it['where']}] " if it.get("where") else ""
-            for i, val in enumerate((VERDICTS[it["verdict"]], where + it.get("finding", ""), it.get("fix", ""))):
-                c = ws.cell(row=row, column=first_col + i, value=val)
-                c.font, c.border, c.alignment = copy(body.font), copy(body.border), copy(body.alignment)
-
-    s = wb.create_sheet("검토 요약", 0)
-    s["A1"], s["A2"], s["A3"] = "평가계획서 검토 결과", f"파일: {r['filename']}", f"검토일: {r['reviewed_at']}"
-    s["A5"] = r["result"]["summary"]
-    s["A1"].font = openpyxl.styles.Font(bold=True, size=14)
-    s.column_dimensions["A"].width = 110
-    s["A5"].alignment = openpyxl.styles.Alignment(wrap_text=True, vertical="top")
-    buf = BytesIO()
-    wb.save(buf)
-    name = f"{Path(r['filename']).stem} 검토 결과.xlsx"
-    return Response(
-        buf.getvalue(),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}"},
-    )
 
 
 # ── 문항 개발 ─────────────────────────────────────────────

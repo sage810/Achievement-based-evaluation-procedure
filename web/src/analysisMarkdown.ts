@@ -20,12 +20,12 @@ export function analysisMarkdown(std: Standard, area: Area, data: AnalysisData):
   out.push(`# 교육과정 분석 — [${std.code}]`, '');
   out.push(`> ${std.statement}`, '');
 
-  out.push('## ① 영역 · 성취기준', '');
+  out.push('## ② 영역 · 성취기준', '');
   out.push(`- 학교급·과목: ${std.school_level} ${std.subject}`);
   out.push(`- 영역: ${Number(area.no)}. ${area.name}`);
   out.push(`- 성취기준: [${std.code}] ${std.statement}`, '');
 
-  out.push('## ② 핵심 아이디어', '');
+  out.push('## ③ 핵심 아이디어', '');
   out.push(area.core_ideas.map((t, i) => `- [${data.core_idea_links.includes(i) ? 'x' : ' '}] ${t}`).join('\n'), '');
   out.push('### 성취기준과의 연결', '');
   out.push(
@@ -40,7 +40,7 @@ export function analysisMarkdown(std: Standard, area: Area, data: AnalysisData):
     '',
   );
 
-  out.push('## ③·④ 내용 체계 — 범주별 내용 요소', '');
+  out.push('## ④ 내용 체계 — 범주별 내용 요소', '');
   out.push(
     table(
       ['범주', '내용 요소 (교육과정 내용 체계)', '★ 이 성취기준과 직접 관련된 요소'],
@@ -74,7 +74,7 @@ export function analysisMarkdown(std: Standard, area: Area, data: AnalysisData):
         ['항목', '내용'],
         [
           ['평가요소 (「~하기」로 진술)', el.element],
-          ['도출 근거 (②~⑥의 어떤 내용·해설에서)', el.basis],
+          ['도출 근거 (③~⑥의 어떤 내용·해설에서)', el.basis],
           ['도출 이유 (왜 이것을 평가해야 하는가)', el.reason],
           ['평가 내용 (무엇으로 확인할 것인가)', el.content],
         ],

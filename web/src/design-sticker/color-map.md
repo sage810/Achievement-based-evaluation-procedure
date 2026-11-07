@@ -150,7 +150,7 @@
 | 역할 | 토큰 | 값 |
 |---|---|---|
 | 국어 — 언어(분홍) | `--msi-role-subj-korean` | `#F9C4D0` |
-| 영어 — 언어 | `--msi-role-subj-english` | `#F7B8C8` |
+| 영어 — 언어 | `--msi-role-subj-english` | `#F8C2DE` |
 | 한문 — 언어 | `--msi-role-subj-hanmun` | `#FBD8DF` |
 | 생활 중국어 — 언어 | `--msi-role-subj-chinese` | `#F4CBDE` |
 | 사회 — 사회(주황·금빛) | `--msi-role-subj-social` | `#FBDCC8` |
@@ -207,7 +207,7 @@
 | DESIGN.md 팔레트 — lavender | `--msi-role-base-lavender` | `#DCD6EE` |
 | DESIGN.md 팔레트 — lavender-desk | `--msi-role-base-lavender-desk` | `#FAF2E1` |
 | DESIGN.md 팔레트 — lilac | `--msi-role-base-lilac` | `#EFD0E6` |
-| DESIGN.md 팔레트 — link-berry | `--msi-role-base-link-berry` | `#c96a97` |
+| DESIGN.md 팔레트 — link-berry | `--msi-role-base-link-berry` | `#B04A6C` |
 | DESIGN.md 팔레트 — live-violet | `--msi-role-base-live-violet` | `#B04A6C` |
 | DESIGN.md 팔레트 — mint | `--msi-role-base-mint` | `#BFE6D6` |
 | DESIGN.md 팔레트 — muted-violet | `--msi-role-base-muted-violet` | `#7A6A60` |
@@ -242,7 +242,7 @@
 | 퀴즈 틀림 글자 · GOAL 라벨 | `--msi-role-ui-feedback-no-ink` | `#A64A4A` |
 | 퀴즈 맞음 바탕 | `--msi-role-ui-feedback-ok-bg` | `#DDF2E6` |
 | 퀴즈 맞음 글자 | `--msi-role-ui-feedback-ok-ink` | `#2F6B48` |
-| 입력·끌어 놓기 칸 포커스·강조 테두리 | `--msi-role-ui-focus-pink` | `#E56A8E` |
+| 입력·끌어 놓기 칸 포커스·강조 테두리 | `--msi-role-ui-focus-pink` | `#DE6388` |
 | 맨 아래 @sage810 | `--msi-role-ui-footer-ink` | `#6B5B51` |
 | 작은 보조 버튼 올림 | `--msi-role-ui-ghost-hover` | `#F3EAE0` |
 | 흐린 초록(예전 과목 색 · 체육) | `--msi-role-ui-green-mut` | `#c9e8b8` |
@@ -274,7 +274,7 @@
 | 시간표 끝나는 시각 글자 | `--msi-role-ui-time-end-ink` | `#6B5B51` |
 | 달력 오늘 칸 바탕 | `--msi-role-ui-today-cell` | `#FFF6D6` |
 | 급식 TOTAL 글자 | `--msi-role-ui-total-ink` | `#8a4f36` |
-| 입력칸 자리표시자 글자(분홍 종이 위 4.5:1↑, 2026-10-16 audit) | `--msi-role-ui-placeholder` | `#857062` |
+| 입력칸 자리표시자 글자(분홍 종이 위 4.5:1↑, 2026-10-16 audit) | `--msi-role-ui-placeholder` | `#806B5D` |
 | 수업용 화면 「일반 소프트웨어」 이름표(선생님 지정 2026-10-19, 「인공지능 소프트웨어」는 base-lilac) | `--msi-role-ui-label-general` | `#ffd685` |
 
 ## 유리 · 움직임 · 손가락 크기 (색이 아닌 토큰 — 활동지 블록에 함께 들어감)
