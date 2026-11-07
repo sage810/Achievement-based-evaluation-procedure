@@ -55,6 +55,53 @@ def write(cell, text: str, head: bool = False, center: bool = False) -> None:
         shade(cell, HEAD_FILL)
 
 
+def text_blocks(text: str) -> list[tuple[str, list]]:
+    """글을 나눈다: 「| 칸 | 칸 |」 줄이 2줄 이상 이어지면 ("table", 행 목록), 나머지는 ("text", 줄 목록)."""
+    is_row = lambda l: l.strip().startswith("|") and l.strip().endswith("|") and len(l.strip()) > 1
+    is_rule = lambda l: is_row(l) and not l.replace("|", "").replace("-", "").replace(":", "").strip()
+    lines, blocks, i = (text or "").split("\n"), [], 0
+    while i < len(lines):
+        j = i
+        while j < len(lines) and is_row(lines[j]):
+            j += 1
+        if j - i >= 2:
+            rows = [[c.strip() for c in l.strip()[1:-1].split("|")] for l in lines[i:j] if not is_rule(l)]
+            blocks.append(("table", rows))
+            i = j
+        else:
+            if blocks and blocks[-1][0] == "text":
+                blocks[-1][1].append(lines[i])
+            else:
+                blocks.append(("text", [lines[i]]))
+            i += 1
+    return blocks
+
+
+def write_rich(cell, text: str) -> None:
+    """문항·예시답안 칸: 표 문법은 칸 안의 진짜 표로 넣는다(학생에게 나가는 자료라 글자 그대로 두지 않는다)."""
+    blocks = text_blocks(text)
+    if not any(kind == "table" for kind, _ in blocks):
+        write(cell, text)
+        return
+    cell.text = ""
+    first = True
+    for kind, value in blocks:
+        if kind == "table":
+            cols = max(len(r) for r in value)
+            t = cell.add_table(len(value), cols)
+            borders(t)
+            for r, row in enumerate(value):
+                for c, val in enumerate(row):
+                    write(t.cell(r, c), val, head=r == 0, center=r == 0)
+        else:
+            for line in value:
+                p = cell.paragraphs[0] if first else cell.add_paragraph()
+                p.paragraph_format.space_after = Pt(0)
+                p.add_run(line).font.size = Pt(9.5)
+                first = False
+        first = False
+
+
 def table(doc, rows: int, cols: int, widths: list[float]):
     t = doc.add_table(rows=rows, cols=cols)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -170,7 +217,7 @@ def build_docx(d: dict) -> bytes:
     # ── 2️⃣ 수행평가 문항 ──
     heading(doc, "2️⃣ 수행평가 문항")
     t = table(doc, 1, 1, [17.4])
-    write(t.cell(0, 0), d.get("question", ""))
+    write_rich(t.cell(0, 0), d.get("question", ""))
 
     # ── 3️⃣ 채점기준표 (성취수준 열 추가) ──
     heading(doc, "3️⃣ 채점기준표")
@@ -217,7 +264,7 @@ def build_docx(d: dict) -> bytes:
     write(t.cell(0, 1), "예시 답안", head=True, center=True)
     for i, a in enumerate(answers, 1):
         write(t.cell(i, 0), a.get("no", ""), center=True)
-        write(t.cell(i, 1), a.get("answer", ""))
+        write_rich(t.cell(i, 1), a.get("answer", ""))
 
     buf = BytesIO()
     doc.save(buf)

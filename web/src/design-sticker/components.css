@@ -217,9 +217,6 @@ textarea.msi-field{min-height:88px;resize:vertical;padding:13px;border-radius:va
 a.msi-pill[target="_blank"]{background:var(--msi-blue)}
 .msi-slot{border-radius:var(--msi-radius-pill);border-color:var(--msi-muted-3)}
 
-/* 키보드 포커스: 분홍 3px 고리 */
-.msi-page :focus-visible{outline:none;box-shadow:0 0 0 3px var(--msi-pink-edge)}
-
 /* PDF 버튼: 박음질 라벨 — 둥근 네모 + 안쪽 점선 + 분홍 번짐 그림자. data-state="busy" 버터 · "done" 민트 · "error" 살몬 */
 .msi-pdf-btn{position:relative;min-width:252px;height:62px;padding:0 22px;border:var(--msi-bw-default) solid var(--msi-ink);border-radius:var(--msi-radius-box);
   background:var(--msi-role-pdf-btn);color:var(--msi-ink);font-family:var(--msi-font-round);font-weight:700;font-size:var(--msi-fs-button);cursor:pointer;

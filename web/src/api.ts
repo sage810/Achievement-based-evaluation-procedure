@@ -192,7 +192,11 @@ let snapshot: Promise<Snapshot> | null = null;
 
 async function fromSnapshot(url: string, method: string): Promise<unknown> {
   if (method !== 'GET') throw new Error('읽기 전용 배포판에서는 저장할 수 없어요');
-  snapshot ??= fetch(`${import.meta.env.BASE_URL}snapshot.json`).then((r) => r.json());
+  snapshot ??= fetch(`${import.meta.env.BASE_URL}snapshot.json`)
+    .then((r) => r.json())
+    .catch(() => {
+      throw new Error('자료를 받지 못했어요. 인터넷 연결을 확인하고 새로 고침해 주세요.');
+    });
   const s = await snapshot;
   const u = new URL(url, location.href);
   const q = Object.fromEntries(u.searchParams);
@@ -201,18 +205,27 @@ async function fromSnapshot(url: string, method: string): Promise<unknown> {
   const path = u.pathname.replace(/^.*\/api\//, '');
   if (path === 'standards') return s.standards.filter(same);
   if (path === 'curriculum') return s.curriculum.find(same) ?? null;
+  if (path === 'analyses') {
+    const ids = s.standards.filter(same).map((x) => String(x.id));
+    return Object.fromEntries(ids.filter((id) => s.analyses[id]).map((id) => [id, s.analyses[id]]));
+  }
   if (path.startsWith('analyses/')) return s.analyses[path.split('/')[1]] ?? null;
   if (path === 'review-template') return s.review_template;
   if (path === 'plan-reviews' || path === 'item-sets') return [];
   throw new Error('읽기 전용 배포판에서는 쓸 수 없는 기능이에요');
 }
 
+// 서버가 꺼져 있을 때 선생님이 할 일까지 알려 주는 안내
+const SERVER_HELP = '서버에 연결하지 못했어요. 「npm run dev」가 켜져 있는지 확인하고 새로 고침해 주세요.';
+
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
   if (READ_ONLY) return fromSnapshot(url, init?.method ?? 'GET') as Promise<T>;
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...init });
+  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...init }).catch(() => {
+    throw new Error(SERVER_HELP);
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.detail ?? `서버 오류 (${res.status})`);
+    throw new Error(body?.detail ?? `${SERVER_HELP} (오류 ${res.status})`);
   }
   return res.json();
 }
@@ -223,6 +236,8 @@ export const api = {
   curriculum: (school_level: string, subject: string) =>
     call<Curriculum | null>(`/api/curriculum?${new URLSearchParams({ school_level, subject })}`),
   analysis: (standardId: number) => call<Analysis | null>(`/api/analyses/${standardId}`),
+  analysesOf: (school_level: string, subject: string) =>
+    call<Record<string, Analysis>>(`/api/analyses?${new URLSearchParams({ school_level, subject })}`),
   saveAnalysis: (standardId: number, data: AnalysisData, ai_draft: boolean) =>
     call<Analysis>(`/api/analyses/${standardId}`, { method: 'PUT', body: JSON.stringify({ data, ai_draft }) }),
   reviewTemplate: () => call<ReviewSheet[]>('/api/review-template'),

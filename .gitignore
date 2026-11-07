@@ -16,3 +16,5 @@ docs/**/*.pdf
 docs/**/*.hwp
 docs/**/*.hwpx
 docs/**/*.xlsx
+# UI 비평 기록 (작업 기록이라 저장소에 올리지 않음)
+.impeccable/critique/

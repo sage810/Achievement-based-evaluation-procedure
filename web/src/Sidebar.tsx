@@ -6,7 +6,7 @@ import { READ_ONLY } from './api';
 export type Tab = 'analysis' | 'graph' | 'review' | 'items';
 
 // 서버에 저장해야 쓰는 탭 — 읽기 전용 배포판에서는 막는다
-const LOCAL_ONLY: Tab[] = ['review', 'items'];
+export const LOCAL_ONLY: Tab[] = ['review', 'items'];
 
 const icon = (name: string) => new URL(`./design-sticker/assets/icons/${name}.png`, import.meta.url).href;
 
@@ -18,16 +18,16 @@ interface Item {
 
 const STAGES: { title: string; items: Item[] }[] = [
   {
-    title: '① 운영 계획',
+    title: '1단계 운영 계획',
     items: [
       { tab: 'analysis', label: '교육과정 분석', icon: 'tab-rules' },
       { tab: 'graph', label: '교육과정 그래프', icon: 'ic-brain' },
       { tab: 'review', label: '평가계획서', icon: 'tab-sheet' },
     ],
   },
-  { title: '② 문항·평가도구 개발', items: [{ tab: 'items', label: '문항 개발', icon: 'ic-palette' }] },
-  { title: '③ 채점', items: [{ label: '채점', icon: 'ic-check' }] },
-  { title: '④ 결과 분석·피드백', items: [{ label: '분석·피드백', icon: 'ic-search' }] },
+  { title: '2단계 문항·평가도구 개발', items: [{ tab: 'items', label: '문항 개발', icon: 'ic-palette' }] },
+  { title: '3단계 채점', items: [{ label: '채점', icon: 'ic-check' }] },
+  { title: '4단계 결과 분석·피드백', items: [{ label: '분석·피드백', icon: 'ic-search' }] },
 ];
 
 interface Props {

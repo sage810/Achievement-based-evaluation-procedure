@@ -234,6 +234,20 @@ class Analysis(BaseModel):
     ai_draft: bool = False
 
 
+@app.get("/api/analyses")
+def list_analyses(school_level: str, subject: str) -> dict[str, dict]:
+    """한 과목의 분석을 한 번에 (성취기준 id → 분석). 그래프 탭이 쓴다."""
+    with closing(connect()) as conn:
+        rows = conn.execute(
+            "SELECT a.* FROM analyses a JOIN standards s ON s.id = a.standard_id WHERE s.school_level = ? AND s.subject = ?",
+            (school_level, subject),
+        ).fetchall()
+    return {
+        str(r["standard_id"]): {"standard_id": r["standard_id"], "data": json.loads(r["data"]), "ai_draft": bool(r["ai_draft"]), "updated_at": r["updated_at"]}
+        for r in rows
+    }
+
+
 @app.get("/api/analyses/{sid}")
 def get_analysis(sid: int) -> dict | None:
     """성취기준 분석. 아직 없으면 null."""

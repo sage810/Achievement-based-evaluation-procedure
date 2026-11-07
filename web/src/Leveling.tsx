@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LEVELS, type AnalysisData, type ElementRow, type Leveling as LevelingData, type Standard } from './api';
+import { EL_COLORS } from './basisMarks';
 import { Text } from './ReadOnly';
 
 // 교육과정 분석 ⑧ 평가요소 수준화 — ⑦에서 뽑은 평가요소마다
@@ -26,9 +27,9 @@ export default function LevelingCard({ std, elements, cues }: Props) {
   const [hintOpen, setHintOpen] = useState<number | null>(null); // ? 를 누른 평가요소 번호
 
   return (
-    <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-leveling)' }}>
+    <section id="sec-leveling" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-leveling)' }}>
       <div className="msi-card-head">
-        <span>⑧ 평가요소 수준화</span>
+        <h2>⑧ 평가요소 수준화</h2>
         <span className="r">① 도출 내용 확인 → ② 도출 이유 재확인 → ③ 수준화</span>
       </div>
       <div className="msi-card-body">
@@ -37,25 +38,15 @@ export default function LevelingCard({ std, elements, cues }: Props) {
           const lv = { ...emptyLeveling(), ...el.leveling };
           return (
             <div key={i} className="lvz-block">
-              <h3 className="msi-unit el-tag">평가요소 {i + 1}</h3>
+              <h3 className={`msi-unit el-tag el-c${i % EL_COLORS}`}>
+                <span className={`ul ul-${i % EL_COLORS}`}>평가요소 {i + 1}</span>
+              </h3>
               {/* 5행 × 2열: 왼쪽 항목 이름, 오른쪽 내용 */}
               <table className="an-table lvz-info">
                 <tbody>
                   <tr>
                     <th scope="row">평가요소</th>
                     <td className="lvz-element">{el.element || '(빈 평가요소)'}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">도출 근거</th>
-                    <td>{el.basis}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">도출 이유</th>
-                    <td>{el.reason}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">평가 내용</th>
-                    <td>{el.content}</td>
                   </tr>
                   <tr>
                     <th scope="row">
@@ -87,11 +78,38 @@ export default function LevelingCard({ std, elements, cues }: Props) {
                 </tbody>
               </table>
 
+              {/* ⑦과 같은 내용이라 접어 둔다 */}
+              <details className="task-more lvz-more">
+                <summary>
+                  <span className="task-more-note">도출 근거 · 도출 이유 · 평가 내용</span>
+                </summary>
+                <div className="task-more-body">
+                  <table className="an-table lvz-info">
+                    <tbody>
+                      <tr>
+                        <th scope="row">도출 근거</th>
+                        <td>{el.basis}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">도출 이유</th>
+                        <td>{el.reason}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">평가 내용</th>
+                        <td>{el.content}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+
               <div className="msi-table-scroll">
                 <table className="an-table lvz-table">
                   <thead>
                     <tr>
-                      <th scope="col">수준</th>
+                      <th scope="col">
+                        수준<span className="th-sub">요소 {i + 1}</span>
+                      </th>
                       <th scope="col">성취수준 진술문</th>
                       <th scope="col">수준 구분 단서 (분석 ⑥)</th>
                       {CELLS.map(([key, label, sub]) => (
@@ -106,10 +124,14 @@ export default function LevelingCard({ std, elements, cues }: Props) {
                     {LEVELS.map((l) => (
                       <tr key={l}>
                         <th scope="row">{l}</th>
-                        <td className="lv-statement">{std.levels[l]}</td>
-                        <td className="lvz-cue">{cues[l]?.cues || '—'}</td>
-                        {CELLS.map(([key]) => (
-                          <td key={key}>
+                        <td className="lv-statement" data-label="성취수준 진술문">
+                          {std.levels[l]}
+                        </td>
+                        <td className="lvz-cue" data-label="수준 구분 단서">
+                          {cues[l]?.cues || '—'}
+                        </td>
+                        {CELLS.map(([key, label]) => (
+                          <td key={key} data-label={label}>
                             <Text value={lv.levels[l][key]} />
                           </td>
                         ))}

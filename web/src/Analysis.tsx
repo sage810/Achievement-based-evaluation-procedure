@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, LEVELS, type AnalysisData, type Curriculum, type Standard } from './api';
 import { analysisMarkdown, downloadMarkdown } from './analysisMarkdown';
 import { areaNo } from './catalog';
+import ContextBar, { sectionInView, showSection, useScrollMemory } from './ContextBar';
 import ElementsTable from './ElementsTable';
 import LevelingCard from './Leveling';
 import { forms, Marked, parseBasis, wordsAt, type ElWord, type Spot, type Where } from './basisMarks';
@@ -71,12 +72,25 @@ interface Props {
   subject: string;
   items: Standard[];
   curriculum: Curriculum | null;
-  initialStdId?: number | null; // 그래프 탭에서 넘어올 때 처음 열 성취기준
+  stdCode: string | null; // 탭 사이에 이어지는 성취기준 — 처음 열 때 이것을 연다
+  onStdChange: (code: string) => void;
+  onDevelop?: () => void; // 「이 성취기준으로 문항 개발」 (읽기 전용 배포판에는 없음)
+  pickerOpen: boolean; // false 면 ① 카드 대신 화면 위 한 줄 요약이 보인다
+  onBarStuck: () => void;
 }
 
-export default function Analysis({ subject, items, curriculum, initialStdId }: Props) {
+const SECTIONS = [
+  { id: 'sec-ideas', label: '② 핵심 아이디어' },
+  { id: 'sec-system', label: '③·④ 내용 체계' },
+  { id: 'sec-doc', label: '⑤ 해설' },
+  { id: 'sec-levels', label: '⑥ 성취수준' },
+  { id: 'sec-elements', label: '⑦ 평가요소' },
+  { id: 'sec-leveling', label: '⑧ 수준화' },
+];
+
+export default function Analysis({ subject, items, curriculum, stdCode, onStdChange, onDevelop, pickerOpen, onBarStuck }: Props) {
   const areas = curriculum?.areas ?? [];
-  const pending = useRef(items.find((s) => s.id === initialStdId) ?? null);
+  const pending = useRef(items.find((s) => s.code === stdCode) ?? null);
   const firstArea = () => {
     const p = pending.current;
     const same = p && p.subject === curriculum?.subject && p.school_level === curriculum?.school_level;
@@ -84,12 +98,47 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
   };
   const [area, setArea] = useState(firstArea);
   const inArea = useMemo(() => items.filter((s) => areaNo(s.code) === area), [items, area]);
-  const [stdId, setStdId] = useState<number | null>(null);
+  const [stdId, setStdId] = useState<number | null>(() => {
+    const p = pending.current;
+    return p && inArea.includes(p) ? p.id! : inArea[0]?.id ?? null;
+  });
   const std = items.find((s) => s.id === stdId) ?? null;
   const areaInfo = areas.find((a) => a.no === area) ?? null;
+  useEffect(() => {
+    if (std) onStdChange(std.code);
+  }, [std?.code]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ◀ ▶ — 영역을 넘어 과목 전체 성취기준을 차례로
+  const stdIndex = items.findIndex((s) => s.id === stdId);
+  const keep = useRef<string | null>(null); // ◀▶ 뒤에도 보던 구역을 유지한다
+  const goStd = (s: Standard) => {
+    keep.current = sectionInView(SECTIONS.map((x) => x.id));
+    pending.current = s;
+    setArea(areaNo(s.code));
+    setStdId(s.id!);
+  };
+  // ⑦ 도출 근거 낱말로 이동한 뒤 돌아올 자리
+  const [backTo, setBackTo] = useState<HTMLElement | null>(null);
+  useEffect(() => setBackTo(null), [stdId]);
+  const goBack = () => {
+    if (!backTo) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    backTo.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
+    backTo.focus({ preventScroll: true });
+    setBackTo(null);
+  };
 
   const [data, setData] = useState<AnalysisData | null>(null);
+  const [loadedId, setLoadedId] = useState<number | null>(null); // data 가 어느 성취기준 것인지
+  const stale = stdId !== null && loadedId !== stdId; // 다음 성취기준을 받는 중 — 지금 보이는 분석은 이전 것
+  useScrollMemory('analysis', std?.code, !stale && !!data);
+  useEffect(() => {
+    if (stale || !keep.current) return;
+    showSection(keep.current);
+    keep.current = null;
+  }, [stale, loadedId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [connHint, setConnHint] = useState(false); // 「성취기준과의 연결」 ? 질문
   // 평가요소마다 도출 근거가 가리키는 곳 — 위 ②③⑤⑥ 본문에 평가요소 색 밑줄
   // 근거가 가리킨 칸·수준 줄에 그 말이 없으면 같은 구역 전체에서 찾는다
@@ -134,14 +183,27 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
   useEffect(() => {
     if (stdId === null) {
       setData(null);
+      setLoading(false);
       return;
     }
     let alive = true;
     setError('');
+    setLoading(true);
     api
       .analysis(stdId)
-      .then((a) => alive && setData(a?.data ?? null))
-      .catch((e) => alive && setError(`분석을 불러오지 못했어요: ${e.message}`));
+      .then((a) => {
+        if (!alive) return;
+        setData(a?.data ?? null);
+        setLoadedId(stdId);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!alive) return;
+        setData(null);
+        setLoadedId(stdId);
+        setLoading(false);
+        setError(`분석을 불러오지 못했어요: ${e.message}`);
+      });
     return () => {
       alive = false;
     };
@@ -157,59 +219,100 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
   }
 
   return (
-    <div className="analysis">
+    <div className={`analysis ${stale ? 'is-loading' : ''}`} aria-busy={stale}>
       {/* ① 영역·성취기준 고르기 */}
-      <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-pick)' }}>
-        <div className="msi-card-head">
-          <span>① 영역 · 성취기준 선택</span>
-        </div>
-        <div className="msi-card-body">
-          <div className="pick-row pick-stack">
-            <label className="msi-label">
-              영역
-              <select
-                className="msi-field"
-                value={area}
-                onChange={(e) => {
-                  pending.current = null;
-                  setArea(e.target.value);
-                }}
-              >
-                {areas.map((a) => (
-                  <option key={a.no} value={a.no}>
-                    {Number(a.no)}. {a.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="msi-label pick-std">
-              성취기준
-              <select className="msi-field" value={stdId ?? ''} onChange={(e) => setStdId(Number(e.target.value))}>
-                {inArea.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    [{s.code}] {s.statement}
-                  </option>
-                ))}
-              </select>
-            </label>
+      {pickerOpen && (
+        <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-pick)' }}>
+          <div className="msi-card-head">
+            <h2>① 영역 · 성취기준 선택</h2>
           </div>
-        </div>
-      </section>
+          <div className="msi-card-body">
+            <div className="pick-row pick-stack">
+              <label className="msi-label">
+                영역
+                <select
+                  className="msi-field"
+                  value={area}
+                  onChange={(e) => {
+                    pending.current = null;
+                    setArea(e.target.value);
+                  }}
+                >
+                  {areas.map((a) => (
+                    <option key={a.no} value={a.no}>
+                      {Number(a.no)}. {a.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="msi-label pick-std">
+                성취기준
+                <select className="msi-field" value={stdId ?? ''} onChange={(e) => setStdId(Number(e.target.value))}>
+                  {inArea.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      [{s.code}] {s.statement}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {/* 선택칸은 글이 길면 잘리므로 전문을 아래에 한 번 더 보여 준다 */}
+              {std && (
+                <p className="msi-small std-full">
+                  [{std.code}] {std.statement}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
-      {error && <p className="status error">{error}</p>}
+      {std && (
+        <ContextBar
+          label={`[${std.code}]`}
+          title={stale ? '불러오는 중이에요…' : std.statement}
+          sections={data ? SECTIONS : []}
+          onStuck={onBarStuck}
+          step={{
+            prev: stdIndex > 0 ? () => goStd(items[stdIndex - 1]) : undefined,
+            next: stdIndex >= 0 && stdIndex < items.length - 1 ? () => goStd(items[stdIndex + 1]) : undefined,
+          }}
+          after={
+            backTo && (
+              <button type="button" className="head-btn" onClick={goBack}>
+                도출 근거로 돌아가기
+              </button>
+            )
+          }
+        />
+      )}
+
+      {error && (
+        <p className="status error" role="alert">
+          {error}
+        </p>
+      )}
       {!std || !areaInfo ? (
         <div className="msi-note">이 영역에 성취기준이 없어요.</div>
       ) : !data ? (
-        <div className="msi-note">이 성취기준은 아직 분석이 없어요. Claude Code에 분석을 채워 달라고 말해 주세요.</div>
+        error ? null : loading ? (
+          <div className="msi-note" role="status">
+            불러오는 중이에요…
+          </div>
+        ) : (
+          <div className="msi-note">이 성취기준은 아직 분석이 없어요. Claude Code에 분석을 채워 달라고 말해 주세요.</div>
+        )
       ) : (
         <>
           {/* ② 핵심 아이디어 */}
-          <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-ideas)' }}>
+          <section id="sec-ideas" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-ideas)' }}>
             <div className="msi-card-head">
-              <span>② 핵심 아이디어</span>
+              <h2>② 핵심 아이디어</h2>
               <span className="r">✓ 맞닿은 문장</span>
             </div>
             <div className="msi-card-body">
+              {basis.some((spots) => spots.length > 0) && (
+                <p className="msi-small el-legend">밑줄은 ⑦ 평가요소의 도출 근거예요. 평가요소마다 색과 모양이 달라요.</p>
+              )}
               <ul className="idea-list">
                 {areaInfo.core_ideas.map((t, i) => {
                   const on = data.core_idea_links.includes(i);
@@ -262,9 +365,9 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
           </section>
 
           {/* ③ 내용 체계 */}
-          <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-system)' }}>
+          <section id="sec-system" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-system)' }}>
             <div className="msi-card-head">
-              <span>③ 내용 체계 — 범주별 내용 요소</span>
+              <h2>③·④ 내용 체계 — 범주별 내용 요소</h2>
             </div>
             <div className="msi-card-body">
               <div className="ks-table" role="table">
@@ -276,25 +379,29 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                 {CATS.map(([key, label]) => (
                   <div key={key} className="ks-row" role="row">
                     <b role="rowheader">{label}</b>
-                    <ul role="cell">
-                      {/* 3열(이 성취기준과 직접 관련)에 있는 요소는 형광펜 밑줄 */}
-                      {areaInfo[key].map((t, i) => (
-                        <li key={i}>
-                          <Marked text={t} hl={std[key].includes(t) ? [t] : []} els={at({ sec: '③', part: key })} />
-                        </li>
-                      ))}
-                    </ul>
-                    <ul role="cell">
-                      {std[key].length ? (
-                        std[key].map((t, i) => (
+                    <div role="cell" data-label="내용 요소 (교육과정 내용 체계)">
+                      <ul>
+                        {/* 3열(이 성취기준과 직접 관련)에 있는 요소는 형광펜 밑줄 */}
+                        {areaInfo[key].map((t, i) => (
                           <li key={i}>
-                            <Marked text={t} els={at({ sec: '③', part: key })} />
+                            <Marked text={t} hl={std[key].includes(t) ? [t] : []} els={at({ sec: '③', part: key })} />
                           </li>
-                        ))
-                      ) : (
-                        <li className="empty">없음</li>
-                      )}
-                    </ul>
+                        ))}
+                      </ul>
+                    </div>
+                    <div role="cell" data-label="★ 이 성취기준과 직접 관련된 요소">
+                      <ul>
+                        {std[key].length ? (
+                          std[key].map((t, i) => (
+                            <li key={i}>
+                              <Marked text={t} els={at({ sec: '③', part: key })} />
+                            </li>
+                          ))
+                        ) : (
+                          <li className="empty">없음</li>
+                        )}
+                      </ul>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -302,9 +409,9 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
           </section>
 
           {/* ⑤ 해설 · 적용 시 고려 사항 — 3×3 표 */}
-          <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-doc)' }}>
+          <section id="sec-doc" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-doc)' }}>
             <div className="msi-card-head">
-              <span>⑤ 성취기준 해설 · 적용 시 고려 사항</span>
+              <h2>⑤ 성취기준 해설 · 적용 시 고려 사항</h2>
             </div>
             <div className="msi-card-body">
               <div className="msi-table-scroll">
@@ -319,7 +426,7 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                   <tbody>
                     <tr>
                       <th scope="row">성취기준 해설</th>
-                      <td>
+                      <td data-label="교육과정 문서 내용">
                         {std.explanation ? (
                           <ul className="info-list">
                             {sentences(std.explanation).map((t, i) => (
@@ -332,13 +439,13 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                           <b className="empty">해설 없음</b>
                         )}
                       </td>
-                      <td>
+                      <td data-label="분석 — 평가에 주는 시사점">
                         <MBullets items={data.explanation_implications} els={at({ sec: '⑤', part: 'explanation' })} />
                       </td>
                     </tr>
                     <tr>
                       <th scope="row">적용 시 고려 사항</th>
-                      <td>
+                      <td data-label="교육과정 문서 내용">
                         <ul className="info-list">
                           {areaInfo.considerations.map((t, i) => (
                             <li key={i}>
@@ -347,7 +454,7 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                           ))}
                         </ul>
                       </td>
-                      <td>
+                      <td data-label="분석 — 평가에 주는 시사점">
                         <MBullets items={data.consideration_implications} els={at({ sec: '⑤', part: 'consideration' })} />
                       </td>
                     </tr>
@@ -358,9 +465,9 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
           </section>
 
           {/* ⑥ 성취수준 범주별 분석 — 6×6 표 */}
-          <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-levels)' }}>
+          <section id="sec-levels" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-levels)' }}>
             <div className="msi-card-head">
-              <span>⑥ 성취기준별 성취수준 범주별 분석</span>
+              <h2>⑥ 성취기준별 성취수준 범주별 분석</h2>
               <span className="r">위에서 아래로 무엇이 빠지는지</span>
             </div>
             <div className="msi-card-body">
@@ -380,7 +487,7 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                     {LEVELS.map((lv) => (
                       <tr key={lv}>
                         <th scope="row">{lv}</th>
-                        <td className="lv-statement">
+                        <td className="lv-statement" data-label="성취수준 진술문">
                           <Marked
                             text={std.levels[lv]}
                             hl={cueWords(data.levels[lv].cues, std.levels[lv])}
@@ -388,7 +495,11 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
                           />
                         </td>
                         {(['knowledge', 'skills', 'attitude', 'cues'] as const).map((key) => (
-                          <td key={key} className={key === 'cues' ? 'cue' : ''}>
+                          <td
+                            key={key}
+                            className={key === 'cues' ? 'cue' : ''}
+                            data-label={{ knowledge: '지식·이해', skills: '과정·기능', attitude: '가치·태도', cues: '수준 구분 단서' }[key]}
+                          >
                             {/* 지식·이해, 과정·기능은 한 줄에 하나씩 점으로 */}
                             {key === 'knowledge' || key === 'skills' ? (
                               <Bullets items={data.levels[lv][key].split('\n')} />
@@ -406,13 +517,13 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
           </section>
 
           {/* ⑦ 평가요소 추출 */}
-          <section className="msi-card" style={{ ['--accent' as string]: 'var(--hd-elements)' }}>
+          <section id="sec-elements" className="msi-card" style={{ ['--accent' as string]: 'var(--hd-elements)' }}>
             <div className="msi-card-head">
-              <span>⑦ 평가요소 추출</span>
+              <h2>⑦ 평가요소 추출</h2>
               <span className="r">무엇을 + 어떻게 → ~하기</span>
             </div>
             <div className="msi-card-body">
-              <ElementsTable rows={data.elements} basis={basis} />
+              <ElementsTable rows={data.elements} basis={basis} onJump={setBackTo} />
             </div>
           </section>
 
@@ -420,12 +531,17 @@ export default function Analysis({ subject, items, curriculum, initialStdId }: P
           <LevelingCard std={std} elements={data.elements} cues={data.levels} />
 
           <div className="md-save">
+            {onDevelop && (
+              <button type="button" className="msi-btn" onClick={onDevelop}>
+                이 성취기준으로 문항 개발
+              </button>
+            )}
             <button
               type="button"
-              className="msi-btn"
+              className={`msi-btn ${onDevelop ? 'secondary' : ''}`}
               onClick={() => downloadMarkdown(`교육과정분석_${std.code}.md`, analysisMarkdown(std, areaInfo, data))}
             >
-              이 성취기준 분석 md 파일로 저장
+              분석 내용을 파일(.md)로 저장
             </button>
           </div>
         </>

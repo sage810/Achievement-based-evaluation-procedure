@@ -137,6 +137,7 @@ export function Marked({ text, hl = [], els = [] }: { text: string; hl?: string[
                 className={`ul ul-${i % EL_COLORS}`}
                 data-el={i}
                 data-words={[...ws].join('|')}
+                title={`평가요소 ${i + 1}의 도출 근거`}
                 style={{ textUnderlineOffset: `${3 + d * 5}px` }}
               >
                 {node}
@@ -162,13 +163,31 @@ export const basisTargets = (i: number, word: string) =>
   );
 
 // ⑦ 도출 근거 글 — 위 본문에 밑줄이 있는 근거 낱말은 누르면 그 밑줄로 이동하는 링크
-export function BasisText({ text, i, words, has }: { text: string; i: number; words: string[]; has: (word: string) => boolean }) {
+export function BasisText({
+  text,
+  i,
+  words,
+  has,
+  onJump,
+}: {
+  text: string;
+  i: number;
+  words: string[];
+  has: (word: string) => boolean;
+  onJump: (from: HTMLElement) => void;
+}) {
   const linked = [...new Set(words)].filter(has).sort((a, b) => b.length - a.length);
   if (!linked.length) return <div className="ro-text">{text}</div>;
   const re = new RegExp(`(${linked.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`);
   const go = (word: string) => {
     const targets = basisTargets(i, word);
-    targets[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    targets[0]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
+    // 키보드 포커스도 함께 옮겨, 이동한 곳에서 이어 읽을 수 있게 한다
+    if (targets[0]) {
+      targets[0].tabIndex = -1;
+      targets[0].focus({ preventScroll: true });
+    }
     targets.forEach((el) => {
       el.classList.remove('is-target');
       void el.offsetWidth; // 다시 누르면 깜빡임을 처음부터
@@ -179,7 +198,15 @@ export function BasisText({ text, i, words, has }: { text: string; i: number; wo
     <div className="ro-text">
       {text.split(re).map((part, j) =>
         j % 2 ? (
-          <button key={j} type="button" className={`basis-link ul ul-${i % EL_COLORS}`} onClick={() => go(part)}>
+          <button
+            key={j}
+            type="button"
+            className={`basis-link ul ul-${i % EL_COLORS}`}
+            onClick={(e) => {
+              onJump(e.currentTarget);
+              go(part);
+            }}
+          >
             {part}
           </button>
         ) : (

@@ -12,7 +12,15 @@ const COLS = [
   ['content', '평가 내용 (무엇으로 확인할 것인가)'],
 ] as const;
 
-export default function ElementsTable({ rows, basis }: { rows: ElementRow[]; basis: Spot[][] }) {
+export default function ElementsTable({
+  rows,
+  basis,
+  onJump,
+}: {
+  rows: ElementRow[];
+  basis: Spot[][];
+  onJump: (from: HTMLElement) => void;
+}) {
   // 위 본문에 실제로 밑줄이 그어진 「평가요소 번호|낱말」 — 이것만 도출 근거 링크로 만든다
   const [drawn, setDrawn] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -28,12 +36,14 @@ export default function ElementsTable({ rows, basis }: { rows: ElementRow[]; bas
       {/* 평가요소마다 표 하나: 표 위에 「평가요소 N」 알약(위 ②③⑤⑥ 본문의 도출 근거 밑줄과 같은 색), 표는 항목 이름 | 내용 */}
       {rows.length > 0 && (
         <p className="msi-small el-legend">
-          위 ②·③·⑤·⑥ 본문의 색 밑줄은 같은 색 평가요소의 도출 근거예요. 도출 근거의 밑줄 친 낱말을 누르면 그곳으로 가요.
+          위 ②·③·④·⑤·⑥ 본문의 밑줄은 색과 모양이 같은 평가요소의 도출 근거예요. 도출 근거의 밑줄 친 낱말을 누르면 그곳으로 가요.
         </p>
       )}
       {rows.map((r, i) => (
         <div key={i} className="el-block">
-          <h3 className={`msi-unit el-tag el-c${i % EL_COLORS}`}>평가요소 {i + 1}</h3>
+          <h3 className={`msi-unit el-tag el-c${i % EL_COLORS}`}>
+            <span className={`ul ul-${i % EL_COLORS}`}>평가요소 {i + 1}</span>
+          </h3>
           <table className="an-table el-table">
             <colgroup>
               <col className="el-label-col" />
@@ -50,6 +60,7 @@ export default function ElementsTable({ rows, basis }: { rows: ElementRow[]; bas
                         i={i}
                         words={(basis[i] ?? []).flatMap((s) => s.words)}
                         has={(w) => drawn.has(`${i}|${w}`)}
+                        onJump={onJump}
                       />
                     ) : (
                       <Text value={r[key]} />

@@ -40,7 +40,7 @@ export function analysisMarkdown(std: Standard, area: Area, data: AnalysisData):
     '',
   );
 
-  out.push('## ③ 내용 체계 — 범주별 내용 요소', '');
+  out.push('## ③·④ 내용 체계 — 범주별 내용 요소', '');
   out.push(
     table(
       ['범주', '내용 요소 (교육과정 내용 체계)', '★ 이 성취기준과 직접 관련된 요소'],
