@@ -110,9 +110,10 @@ body { margin: 0; }
 .msi-page :focus-visible { outline-color: var(--msi-link); }
 
 /* 넓은 화면: 열려 있으면 본문을 도크 오른쪽으로 비켜 준다. 좁은 화면은 도크가 본문 위에 떠 있다가 손잡이로 닫음 */
+/* 본문을 넓히려고 바깥 여백을 줄임: 손잡이(오른쪽 끝 251px)와 본문 사이 10px, 오른쪽 12px */
 @media (min-width: 901px) {
-  .msi-page.sidebar-open { padding-left: 270px; }
-  .msi-page:not(.sidebar-open) { padding-left: 44px; }
+  .msi-page.sidebar-open { padding-left: 261px; padding-right: 12px; }
+  .msi-page:not(.sidebar-open) { padding-left: 44px; padding-right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .sidebar-handle svg { transition: none; } }
 
