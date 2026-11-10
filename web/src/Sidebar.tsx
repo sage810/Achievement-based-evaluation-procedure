@@ -22,7 +22,7 @@ const STAGES: { title: string; items: Item[] }[] = [
     items: [
       { tab: 'analysis', label: '교육과정 분석', icon: 'tab-rules' },
       { tab: 'graph', label: '교육과정 그래프', icon: 'ic-brain' },
-      { tab: 'review', label: '평가계획서', icon: 'tab-sheet' },
+      { tab: 'review', label: '평가계획서 검토', icon: 'tab-sheet' },
     ],
   },
   { title: '2단계 문항·평가도구 개발', items: [{ tab: 'items', label: '문항 개발', icon: 'ic-palette' }] },

@@ -419,7 +419,10 @@ html { scroll-padding: calc(var(--ctx-h, 122px) + 16px) 0 90px; } /* 위에 붙�
 .guide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .guide-actions .msi-small { flex: 1 1 240px; margin: 0; }
 .guide-actions .status { flex: 1 1 100%; }
-.prompt-box { min-height: 200px; resize: vertical; font-size: 15px; line-height: 1.6; }
+.prompt-row { align-items: flex-end; }
+.prompt-row .msi-label { flex: 0 1 340px; min-width: 0; }
+.prompt-row select { width: 100%; }
+.tip-note { background: var(--msi-role-ui-callout-tip); line-height: 1.6; word-break: keep-all; }
 .how-steps { margin: 0; padding-left: 1.5em; display: flex; flex-direction: column; gap: 8px; line-height: 1.6; word-break: keep-all; max-width: 56em; }
 .review-table { min-width: 860px; }
 .review-table thead th:nth-child(1) { width: 52px; }
@@ -557,7 +560,8 @@ html { scroll-padding: calc(var(--ctx-h, 122px) + 16px) 0 90px; } /* 위에 붙�
 .msi-card:not(.graph-card), .an-table { overflow: clip; }
 @container (min-width: 910px) {
   .msi-table-scroll { overflow: visible; }
-  .lv-table > thead th, .lvz-table > thead th, .review-table > thead th, .doc-table > thead th { position: sticky; top: calc(var(--ctx-h, 94px) + 8px); z-index: 2; }
+  .lv-table > thead th, .lvz-table > thead th, .doc-table > thead th { position: sticky; top: calc(var(--ctx-h, 94px) + 8px); z-index: 2; }
+  .review-table > thead th { position: sticky; top: 8px; z-index: 2; } /* 이 탭에는 위 막대가 없다 */
 }
 .task-more.lvz-more > summary::before { content: '▸ ⑦에서 도출한 내용 보기'; }
 .task-more.lvz-more[open] > summary::before { content: '▾ 접기'; }

@@ -2,7 +2,7 @@ import { LEVELS, type ReviewSheet, type Standard } from './api';
 import guideTemplate from './review-guide/guide.md?raw';
 import xlsxScript from './review-guide/make_xlsx.py?raw';
 
-// 평가계획서 탭 — 생성형 AI에 넣는 검토 지침 md 와 프롬프트 예시를 브라우저에서 만든다 (서버 없이 동작)
+// 평가계획서 검토 탭 — 생성형 AI에 넣는 검토 지침 md 와 프롬프트 예시를 브라우저에서 만든다 (서버 없이 동작)
 
 const lf = (text: string) => text.replace(/\r\n/g, '\n');
 

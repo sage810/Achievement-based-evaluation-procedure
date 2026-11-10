@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { downloadMarkdown } from './analysisMarkdown';
 import { api, type ReviewSheet, type Standard } from './api';
-import ContextBar, { useScrollMemory } from './ContextBar';
 import { REVIEW_PROMPTS, reviewGuideFilename, reviewGuideMarkdown } from './reviewGuide';
 
 // 평가계획서 검토 탭 — 검토 지침 md 와 프롬프트를 내려받아 생성형 AI에 넣는다. 서버 없이 동작한다.
@@ -23,7 +22,6 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
   const [promptId, setPromptId] = useState(REVIEW_PROMPTS[0].id);
   const [note, setNote] = useState<Note>(null); // 누른 버튼 곁에 보이는 결과 알림
   const [templateError, setTemplateError] = useState('');
-  const promptBox = useRef<HTMLTextAreaElement>(null);
   const prompt = REVIEW_PROMPTS.find((p) => p.id === promptId) ?? REVIEW_PROMPTS[0];
 
   useEffect(() => {
@@ -35,8 +33,6 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
 
   useEffect(() => setNote(null), [schoolLevel, subject, promptId]); // 지난 알림이 지금 고른 것처럼 보이지 않게
 
-  useScrollMemory('review', 'guide', sheets.length > 0);
-
   const canDownload = ready && sheets.length > 0 && standards.length > 0;
 
   function downloadGuide() {
@@ -47,25 +43,6 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
   function downloadPrompt() {
     downloadMarkdown(prompt.file, prompt.text);
     setNote({ place: 'prompt', kind: 'ok', text: `✓ 「${prompt.label}」 프롬프트를 내려받았어요.` });
-  }
-
-  // http 주소에서는 navigator.clipboard 가 없어 글을 선택해 복사한다
-  async function copyPrompt() {
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(prompt.text);
-      copied = true;
-    } catch {
-      const box = promptBox.current;
-      box?.focus();
-      box?.select();
-      copied = document.execCommand('copy');
-    }
-    setNote(
-      copied
-        ? { place: 'prompt', kind: 'ok', text: `✓ 「${prompt.label}」 프롬프트를 복사했어요.` }
-        : { place: 'prompt', kind: 'error', text: '복사하지 못했어요. 프롬프트 글을 직접 선택해 복사해 주세요.' },
-    );
   }
 
   // 알림 자리는 늘 두어 화면 낭독기가 바뀐 글을 읽게 한다
@@ -88,6 +65,9 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
           </span>
         </div>
         <div className="msi-card-body">
+          <div className="msi-note tip-note">
+            <b>TIP</b> 검토 지침 md와 프롬프트를 내려받아, 평가계획서와 함께 생성형 AI에 넣어 주세요.
+          </div>
           <div className="guide-actions">
             <button type="button" className="msi-btn" onClick={downloadGuide} disabled={!canDownload}>
               검토 지침 md 내려받기
@@ -106,21 +86,17 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
               {templateError}
             </p>
           )}
-          <label className="msi-label">
-            프롬프트 예시
-            <select className="msi-field" value={prompt.id} onChange={(e) => setPromptId(e.target.value)}>
-              {REVIEW_PROMPTS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <textarea ref={promptBox} className="msi-field prompt-box" aria-label="프롬프트 내용" readOnly value={prompt.text} />
-          <div className="guide-actions">
-            <button type="button" className="msi-btn secondary" onClick={copyPrompt}>
-              프롬프트 복사
-            </button>
+          <div className="guide-actions prompt-row">
+            <label className="msi-label">
+              프롬프트 예시
+              <select className="msi-field" value={prompt.id} onChange={(e) => setPromptId(e.target.value)}>
+                {REVIEW_PROMPTS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button type="button" className="msi-btn secondary" onClick={downloadPrompt}>
               프롬프트 내려받기
             </button>
@@ -128,15 +104,6 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
           </div>
         </div>
       </section>
-
-      <ContextBar
-        label={`${schoolLevel} ${subject}`}
-        sections={[
-          { id: 'sec-guide', label: '검토 지침' },
-          { id: 'sec-how', label: '사용 순서' },
-          ...sheets.map((sh) => ({ id: `sec-sheet-${sh.key}`, label: sh.title.split(' — ')[0] })),
-        ]}
-      />
 
       <section id="sec-how" className="msi-card sec-plan-how">
         <div className="msi-card-head">
@@ -148,7 +115,7 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
               <b>지침 내려받기.</b> 학교급과 과목을 고르고 검토 지침 md를 내려받아요.
             </li>
             <li>
-              <b>프롬프트 고르기.</b> 쓰는 AI에 맞는 예시를 복사하거나 내려받아요. 엑셀 파일을 만들어 주는지 모르겠으면 「{REVIEW_PROMPTS[0].label}」로 먼저 해 보세요.
+              <b>프롬프트 고르기.</b> 쓰는 AI에 맞는 예시를 골라 내려받아요. 엑셀 파일을 만들어 주는지 모르겠으면 「{REVIEW_PROMPTS[0].label}」로 먼저 해 보세요.
             </li>
             <li>
               <b>AI에 넣기.</b> 생성형 AI에 md와 평가계획서를 첨부하고 프롬프트를 보내요. HWP·HWPX는 AI가 잘 읽지 못할 수 있으니 PDF로 저장해 첨부해 주세요. 학사일정이 있으면 함께 첨부해 주세요. 평가 시기까지 판정할 수 있어요.
@@ -164,10 +131,11 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
       </section>
 
       {sheets.map((sheet) => (
-        <section key={sheet.key} id={`sec-sheet-${sheet.key}`} className={`msi-card ${SHEET_SEC[sheet.key]}`}>
-          <div className="msi-card-head">
+        <details key={sheet.key} id={`sec-sheet-${sheet.key}`} className={`msi-card info-card ${SHEET_SEC[sheet.key]}`}>
+          <summary className="msi-card-head">
             <h2>{sheet.title}</h2>
-          </div>
+            <span className="r" />
+          </summary>
           <div className="msi-card-body">
             {sheet.groups.map((g) => (
               <div key={g.title} className="review-group">
@@ -202,7 +170,7 @@ export default function PlanReview({ schoolLevel, subject, standards, ready, loa
               </div>
             ))}
           </div>
-        </section>
+        </details>
       ))}
     </div>
   );
