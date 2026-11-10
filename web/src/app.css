@@ -71,9 +71,11 @@ body { margin: 0; }
 .app-wrap { max-width: 1240px; }
 
 /* ── 좌측 사이드바(떠 있는 도크) — 평가 절차 4단계 메뉴 ── */
+/* 도크 전체(글자·아이콘·여백)를 3/4로 줄임 → 보이는 폭 159px. zoom 은 left·max-height 까지 줄이므로 그 둘만 되돌려 둔다 */
 .sidebar {
-  position: fixed; left: 16px; top: 50%; transform: translateY(-50%); z-index: 30;
-  width: 212px; max-height: calc(100vh - 32px); overflow-y: auto; /* 메뉴 이름이 한 줄에 딱 들어가는 폭 */
+  --sb-zoom: .75; zoom: var(--sb-zoom);
+  position: fixed; left: calc(16px / var(--sb-zoom)); top: 50%; transform: translateY(-50%); z-index: 30;
+  width: 212px; max-height: calc((100vh - 32px) / var(--sb-zoom)); overflow-y: auto; /* 212px = 메뉴 이름이 한 줄에 딱 들어가는 폭(줄이기 전 크기) */
   display: flex; flex-direction: column; gap: 2px; padding: 10px;
   background: var(--msi-paper); border: 3px solid var(--msi-ink); border-radius: var(--msi-radius-card);
   box-shadow: var(--msi-shadow-card);
@@ -97,7 +99,7 @@ body { margin: 0; }
 
 /* 손잡이: 도크 오른쪽 테두리(닫히면 화면 왼쪽 끝)에 붙음. 보이는 폭 26px, 누르는 영역 46px */
 .sidebar-handle {
-  position: fixed; left: 225px; top: 50%; transform: translateY(-50%); z-index: 31;
+  position: fixed; left: 172px; top: 50%; transform: translateY(-50%); z-index: 31; /* 도크 오른쪽 끝(16+159=175px) 테두리 위 */
   width: 26px; height: 60px; padding: 0; display: flex; align-items: center; justify-content: center;
   border: 3px solid var(--msi-ink); border-left: 0; border-radius: 0 12px 12px 0;
   background: var(--msi-role-topic-head); color: var(--msi-ink); cursor: pointer; box-shadow: var(--msi-shadow-chip);
@@ -110,9 +112,9 @@ body { margin: 0; }
 .msi-page :focus-visible { outline-color: var(--msi-link); }
 
 /* 넓은 화면: 열려 있으면 본문을 도크 오른쪽으로 비켜 준다. 좁은 화면은 도크가 본문 위에 떠 있다가 손잡이로 닫음 */
-/* 본문을 넓히려고 바깥 여백을 줄임: 손잡이(오른쪽 끝 251px)와 본문 사이 10px, 오른쪽 12px */
+/* 본문을 넓히려고 바깥 여백을 줄임: 손잡이(오른쪽 끝 198px)와 본문 사이 10px, 오른쪽 12px */
 @media (min-width: 901px) {
-  .msi-page.sidebar-open { padding-left: 261px; padding-right: 12px; }
+  .msi-page.sidebar-open { padding-left: 208px; padding-right: 12px; }
   .msi-page:not(.sidebar-open) { padding-left: 44px; padding-right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .sidebar-handle svg { transition: none; } }
